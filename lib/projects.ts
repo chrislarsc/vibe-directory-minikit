@@ -23,7 +23,7 @@ export const projects: Project[] = [
     link: 'https://v0-hot-or-not-nft-app.vercel.app/',
     createdAt: '2025-04-02T00:00:00Z',
     featured: true,
-    image: 'https://img.freepik.com/free-vector/colorful-vector-vibes-peachy-background-sticker_53876-176240.jpg'
+    image: 'https://v0-hot-or-not-nft-app.vercel.app/images/vibe-group.png'
   },
   {
     id: "2",
@@ -69,7 +69,7 @@ export const projects: Project[] = [
     authorFid: 192300,
     link: 'https://vibe-fusion-sandbox.lovable.app/',
     createdAt: '2025-03-28T00:00:00Z',
-    featured: true,
+    featured: false,
     image: 'https://img.freepik.com/free-vector/colorful-vector-vibes-peachy-background-sticker_53876-176240.jpg'
   },
   {
