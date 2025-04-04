@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
-import { ADMIN_ADDRESSES, PROJECT_CATEGORIES } from "@/lib/constants";
+import { ADMIN_ADDRESSES } from "@/lib/constants";
 import type { Project } from "@/lib/projects";
 import { addProject } from "@/lib/projectService";
 

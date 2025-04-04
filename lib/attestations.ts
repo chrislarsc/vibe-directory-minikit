@@ -1,5 +1,5 @@
 import { encodeAbiParameters, type Address } from 'viem';
-import { VIEW_ATTESTATION_SCHEMA_UID, BASE_CHAIN_ID } from './constants';
+import { VIEW_ATTESTATION_SCHEMA_UID } from './constants';
 
 // In-memory storage for attestations (in a real app, we would query a blockchain)
 interface Attestation {
@@ -20,8 +20,9 @@ export async function createAttestationForProjectView(
   userAddress: Address, 
   projectId: string
 ): Promise<Attestation> {
-  // Encode data for attestation
-  const encodedData = encodeAbiParameters(
+  // Encode data for attestation (not used in this mock implementation, but would be used in blockchain integration)
+  // This simulates data that would be stored on-chain in a real implementation
+  const _ = encodeAbiParameters(
     [{ type: 'string' }, { type: 'string' }],
     [userAddress, projectId]
   );
