@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
             name: "Vibe projects",
             url: "https://my-first-mini-app.vercel.app",
             splashImageUrl: "https://my-first-mini-app.vercel.app/splash.png",
-            splashBackgroundColor: `#${process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR}`,
+            splashBackgroundColor: "#FFFFFF",
           },
         },
       }),
@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-      <meta name='fc:frame' content='{"version":"next","imageUrl":"https://my-first-mini-app.vercel.app/splash.png","aspectRatio":"3:2","button":{"title":"Launch app","action":{"type":"launch_frame","name":"Vibe projects","url":"https://my-first-mini-app.vercel.app","splashImageUrl":"https://my-first-mini-app.vercel.app/splash.png"}}}' />
+        <meta name='fc:frame' content='{"version":"next","imageUrl":"https://my-first-mini-app.vercel.app/splash.png","aspectRatio":"1:1","button":{"title":"Launch app","action":{"type":"launch_frame","name":"Vibe projects","url":"https://my-first-mini-app.vercel.app","splashImageUrl":"https://my-first-mini-app.vercel.app/splash.png","splashBackgroundColor":"#FFFFFF"}}}' />
       </head>
       <body className="bg-background">
         <Providers>{children}</Providers>
