@@ -41,7 +41,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-background overflow-hidden">
+      <head>
+        <meta name='fc:frame' content='{"version":"next","imageUrl":"https://my-first-mini-app.vercel.app/splash.png","button":{"title":"Launch minikit-test","action":{"type":"launch_frame","name":"minikit-test","url":"https://my-first-mini-app.vercel.app","splashImageUrl":"https://my-first-mini-app.vercel.app/splash.png","splashBackgroundColor":"#FFFFFF"}}}' />
+      </head>
+      <body className="bg-background">
         <Providers>{children}</Providers>
       </body>
     </html>
