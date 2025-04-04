@@ -22,6 +22,7 @@ export async function createAttestationForProjectView(
 ): Promise<Attestation> {
   // Encode data for attestation (not used in this mock implementation, but would be used in blockchain integration)
   // This simulates data that would be stored on-chain in a real implementation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _ = encodeAbiParameters(
     [{ type: 'string' }, { type: 'string' }],
     [userAddress, projectId]
