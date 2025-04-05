@@ -19,6 +19,7 @@ export default function AdminPage() {
   });
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const { address } = useAccount();
   const router = useRouter();
@@ -52,6 +53,34 @@ export default function AdminPage() {
     setNewProject(prev => ({ ...prev, [name]: checked }));
   };
 
+  const sendProjectNotification = async (project: Project) => {
+    setIsSending(true);
+    try {
+      const res = await fetch('/api/broadcast-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'New Project Added! 🚀',
+          body: `Check out "${project.title}" by ${project.author}`,
+          adminAddress: address
+        }),
+      });
+      
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send notification');
+      }
+      
+      console.log('Notification sent successfully:', data.stats);
+      return data;
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      throw error;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleAddProject = async () => {
     // Validate required fields
     if (!newProject.title || !newProject.description || !newProject.link) {
@@ -66,6 +95,16 @@ export default function AdminPage() {
       
       // Show success message
       setSuccessMessage('Project added successfully!');
+      
+      // Try to send notification
+      try {
+        await sendProjectNotification(project);
+        setSuccessMessage('Project added and notification sent!');
+      } catch (error) {
+        console.error('Failed to send notification:', error);
+        // We still added the project, so show success message
+        setSuccessMessage('Project added, but notification failed to send.');
+      }
       
       // Reset form after 3 seconds
       setTimeout(() => {
@@ -202,9 +241,10 @@ export default function AdminPage() {
         <button 
           type="button"
           onClick={handleAddProject}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          disabled={isSending}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Add Project
+          {isSending ? 'Adding Project & Sending Notification...' : 'Add Project & Send Notification'}
         </button>
       </form>
     </div>

@@ -4,6 +4,7 @@ import {
   useMiniKit,
   useAddFrame,
   useOpenUrl,
+  useNotification
 } from "@coinbase/onchainkit/minikit";
 import { Name, Identity } from "@coinbase/onchainkit/identity";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -22,9 +23,11 @@ export default function App() {
   const [frameAdded, setFrameAdded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [notificationSent, setNotificationSent] = useState(false);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
+  const sendNotification = useNotification();
   const { address } = useAccount();
 
   // Load projects
@@ -51,9 +54,50 @@ export default function App() {
   }, [address]);
 
   const handleAddFrame = useCallback(async () => {
-    const frameAdded = await addFrame();
-    setFrameAdded(Boolean(frameAdded));
-  }, [addFrame, setFrameAdded]);
+    try {
+      const result = await addFrame();
+      
+      if (result) {
+        setFrameAdded(true);
+        console.log('Frame added with token:', result.token);
+        
+        // Store the token in our backend for future notifications
+        if (address) {
+          await fetch('/api/store-notification-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: address,
+              token: result.token,
+              url: result.url
+            }),
+          });
+          
+          // Send a test notification
+          await sendNotification({
+            title: 'Welcome to Vibe Directory! 👋',
+            body: 'You will now receive notifications when new vibe projects are added.'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to add frame:', error);
+    }
+  }, [addFrame, address, sendNotification]);
+
+  const handleSendTestNotification = async () => {
+    try {
+      setNotificationSent(true);
+      await sendNotification({
+        title: 'Test Notification 🚀',
+        body: 'This is a test notification from the Vibe Directory!'
+      });
+      setTimeout(() => setNotificationSent(false), 5000);
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      setNotificationSent(false);
+    }
+  };
 
   const saveFrameButton = useMemo(() => {
     if (context && !context.client.added) {
@@ -110,7 +154,19 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <WalletButton />
-          <div className="pr-1 justify-end">{saveFrameButton}</div>
+          <div className="pr-1 justify-end flex items-center gap-2">
+            {context?.client.added && (
+              <button
+                type="button"
+                onClick={handleSendTestNotification}
+                disabled={notificationSent}
+                className="cursor-pointer bg-transparent font-semibold text-sm disabled:opacity-50"
+              >
+                {notificationSent ? "SENT!" : "TEST NOTIFICATION"}
+              </button>
+            )}
+            {saveFrameButton}
+          </div>
         </div>
       </header>
 

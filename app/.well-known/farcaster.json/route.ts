@@ -1,22 +1,29 @@
 export async function GET() {
-  const URL = process.env.NEXT_PUBLIC_URL;
-
+  // Return the exact JSON structure requested
   return Response.json({
     accountAssociation: {
-      header: process.env.FARCASTER_HEADER,
-      payload: process.env.FARCASTER_PAYLOAD,
-      signature: process.env.FARCASTER_SIGNATURE,
+      header: "eyJmaWQiOjE5MjMwMCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDM3MzdFMzU3Y2NhZGMyN2I5NTU1NGIzMGM1OEI5RTFmMzMwNjRjMUYifQ",
+      payload: "eyJkb21haW4iOiJteS1maXJzdC1taW5pLWFwcC52ZXJjZWwuYXBwIn0",
+      signature: "MHgzMjgyOTIyY2U5ZmNlMThiNDFhNWM2MjM2YWNhZDI5NjNmOGMyNTg4ODFhYjNlOTU0MzJiYjdlY2U2OTRjYzIwMzdjZWU5M2M3NTY2YjU0NDUyNTBiNTUzMGZjMGZlZTgzNzM3YzQxYTZkNjAxMTJjZTdhODFhMWFjYzhjOWU4ZTFi"
     },
     frame: {
-      version: process.env.NEXT_PUBLIC_VERSION,
-      name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
-      homeUrl: URL,
-      iconUrl: process.env.NEXT_PUBLIC_ICON_URL,
-      imageUrl: process.env.NEXT_PUBLIC_IMAGE_URL,
-      buttonTitle: `Launch ${process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME}`,
-      splashImageUrl: process.env.NEXT_PUBLIC_SPLASH_IMAGE_URL,
-      splashBackgroundColor: `#${process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR}`,
-      webhookUrl: `${URL}/api/webhook`,
+      version: "1",
+      name: "Vibe projects",
+      homeUrl: "https://my-first-mini-app.vercel.app",
+      iconUrl: "https://my-first-mini-app.vercel.app/splash.png",
+      imageUrl: "https://my-first-mini-app.vercel.app/splash.png",
+      buttonTitle: "Launch app",
+      splashImageUrl: "https://my-first-mini-app.vercel.app/splash.png",
+      splashBackgroundColor: "#FFFFFF",
+      webhookUrl: "https://my-first-mini-app.vercel.app/api/webhook"
     },
+    triggers: [
+      {
+        type: "cast",
+        id: "view-app",
+        url: "https://my-first-mini-app.vercel.app",
+        name: "View minikit-test"
+      }
+    ]
   });
 }

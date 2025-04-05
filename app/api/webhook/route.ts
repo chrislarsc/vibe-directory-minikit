@@ -87,8 +87,8 @@ export async function POST(request: Request) {
         await setUserNotificationDetails(fid, event.notificationDetails);
         await sendFrameNotification({
           fid,
-          title: `Welcome to ${appName}`,
-          body: `Thank you for adding ${appName}`,
+          title: `Welcome to Vibe projects`,
+          body: `You'll be notified when new projects are added`,
         });
       } else {
         console.log(
