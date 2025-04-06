@@ -972,7 +972,7 @@ const Sammy = () => {
     const scoreCtx = scoreCanvasRef.current?.getContext("2d");
     if (scoreCtx) {
       scoreCtx.clearRect(0, 0, 500, 530);
-      scoreCtx.font = "20px Pixelify Sans";
+      scoreCtx.font = "20px Inter";
       scoreCtx.fillStyle = COLORS.black;
       scoreCtx.fillText(`Score: ${score.total}`, 10, 520);
       scoreCtx.fillText(`Points: ${score.points}`, 200, 520);

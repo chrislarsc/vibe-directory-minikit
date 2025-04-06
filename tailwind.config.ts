@@ -9,7 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["Pixelify Sans", "serif"],
+        sans: ["Inter", "sans-serif"],
+        serif: ["Inter", "sans-serif"],
       },
       colors: {
         background: "var(--background)",

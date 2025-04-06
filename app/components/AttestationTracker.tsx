@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from "react";
 import type { Address } from 'viem';
-import { getUserAttestationData } from "@/lib/attestationClient";
 
-interface AttestationTrackerProps {
+interface EngagementStats {
+  viewedProjects: string[];
+  viewCount: number;
+}
+
+interface ViewTrackerProps {
   address: Address;
 }
 
-export default function AttestationTracker({ address }: AttestationTrackerProps) {
+export default function ViewTracker({ address }: ViewTrackerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    attestationCount: 0,
-    uniqueProjectsCount: 0
+  const [stats, setStats] = useState<EngagementStats>({
+    viewedProjects: [],
+    viewCount: 0
   });
   
   useEffect(() => {
@@ -22,17 +26,27 @@ export default function AttestationTracker({ address }: AttestationTrackerProps)
     setIsLoading(true);
     setError(null);
     
-    getUserAttestationData(address)
+    fetch(`/api/project-views?userId=${address}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch view data');
+        }
+        return response.json();
+      })
       .then(data => {
-        setStats({
-          attestationCount: data.attestationCount,
-          uniqueProjectsCount: data.uniqueProjectsCount
-        });
+        if (data.success) {
+          setStats({
+            viewedProjects: data.data.viewedProjects || [],
+            viewCount: data.data.viewCount || 0
+          });
+        } else {
+          throw new Error(data.error || 'Failed to load view data');
+        }
         setIsLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching attestation stats:', err);
-        setError('Failed to load attestation data');
+        console.error('Error fetching user view stats:', err);
+        setError('Failed to load view data');
         setIsLoading(false);
       });
   }, [address]);
@@ -60,17 +74,13 @@ export default function AttestationTracker({ address }: AttestationTrackerProps)
       <div className="flex gap-4">
         <div>
           <p className="text-sm text-gray-600">Projects Viewed</p>
-          <p className="text-xl font-bold">{stats.uniqueProjectsCount}</p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Total Attestations</p>
-          <p className="text-xl font-bold">{stats.attestationCount}</p>
+          <p className="text-xl font-bold">{stats.viewedProjects.length}</p>
         </div>
       </div>
       
-      {stats.uniqueProjectsCount === 0 && (
+      {stats.viewedProjects.length === 0 && (
         <p className="text-sm text-gray-500 mt-2">
-          Start exploring projects to earn attestations!
+          Start exploring projects to track your views!
         </p>
       )}
     </div>

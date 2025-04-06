@@ -3,6 +3,9 @@ import "@coinbase/onchainkit/styles.css";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -41,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <head>
         <meta name='fc:frame' content='{"version":"next","imageUrl":"https://my-first-mini-app.vercel.app/splash.png","aspectRatio":"1:1","button":{"title":"Launch app","action":{"type":"launch_frame","name":"Vibe projects","url":"https://my-first-mini-app.vercel.app","splashImageUrl":"https://my-first-mini-app.vercel.app/splash.png","splashBackgroundColor":"#FFFFFF"}}}' />
       </head>

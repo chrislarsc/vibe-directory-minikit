@@ -60,8 +60,8 @@ export default function AdminPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'New Project Added! 🚀',
-          body: `Check out "${project.title}" by ${project.author}`,
+          title: 'New project added',
+          body: `Check out ${project.title} by ${project.author}`,
           adminAddress: address
         }),
       });
@@ -89,8 +89,22 @@ export default function AdminPage() {
     }
     
     try {
-      // Add the new project using our service
-      const project = addProject(newProject);
+      // Add the new project using the API endpoint
+      const projectRes = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: newProject,
+          adminAddress: address
+        }),
+      });
+      
+      const projectData = await projectRes.json();
+      if (!projectData.success) {
+        throw new Error(projectData.error || 'Failed to add project');
+      }
+      
+      const project = projectData.data;
       console.log('Added new project:', project);
       
       // Show success message
