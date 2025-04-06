@@ -6,19 +6,36 @@ import type { Project } from "@/lib/projects";
 import type { Address } from 'viem';
 import { useViews } from "./ViewContext";
 import PromptModal from "./PromptModal";
+import AdminControls from "./AdminControls";
+import { ADMIN_ADDRESSES } from "@/lib/constants";
 
 interface ProjectCardProps {
   project: Project;
   userAddress?: Address;
+  onProjectUpdated?: () => void;
+  onProjectDeleted?: () => void;
 }
 
-export default function ProjectCard({ project, userAddress }: ProjectCardProps) {
+export default function ProjectCard({ 
+  project, 
+  userAddress, 
+  onProjectUpdated,
+  onProjectDeleted
+}: ProjectCardProps) {
   const openUrl = useOpenUrl();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const { hasViewedProject, trackProjectView } = useViews();
   
   const hasViewed = hasViewedProject(project.id);
+  
+  // Check if user is admin
+  const isAdmin = !!userAddress && ADMIN_ADDRESSES.some(
+    addr => addr.toLowerCase() === userAddress.toLowerCase()
+  );
+
+  // Status indicator for pending projects (only shown to admins)
+  const isPendingApproval = isAdmin && !project.displayed;
   
   const handleProjectClick = async () => {
     if (!project.link) return;
@@ -43,8 +60,67 @@ export default function ProjectCard({ project, userAddress }: ProjectCardProps) 
     }
   };
   
+  const handleUpdateProject = async (updatedFields: Partial<Project>) => {
+    if (!isAdmin || !userAddress) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminAddress: userAddress,
+          project: updatedFields
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update project');
+      }
+      
+      if (onProjectUpdated) {
+        onProjectUpdated();
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+    }
+  };
+  
+  const handleDeleteProject = async () => {
+    if (!isAdmin || !userAddress) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${project.id}?adminAddress=${userAddress}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to delete project');
+      }
+      
+      if (onProjectDeleted) {
+        onProjectDeleted();
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      throw error;
+    }
+  };
+  
   return (
-    <div className="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+    <div className={`p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow ${isPendingApproval ? 'border-yellow-400' : ''}`}>
+      {isPendingApproval && (
+        <div className="mb-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full inline-block">
+          Pending Approval
+        </div>
+      )}
+      
       <h2 className="text-xl font-bold">{project.title}</h2>
       <p className="text-sm text-gray-600 mb-2">By {project.author}</p>
       <p className="mb-4 text-gray-800">{project.description}</p>
@@ -83,6 +159,15 @@ export default function ProjectCard({ project, userAddress }: ProjectCardProps) 
           </span>
         )}
       </div>
+      
+      {isAdmin && (
+        <AdminControls 
+          project={project}
+          onUpdate={handleUpdateProject}
+          onDelete={handleDeleteProject}
+          adminAddress={userAddress}
+        />
+      )}
       
       {project.prompt && (
         <PromptModal

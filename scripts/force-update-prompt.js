@@ -23,7 +23,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Project data with prompt
+  // Project data with prompt and displayed field
   const projects = [
     {
       id: "1",
@@ -34,6 +34,7 @@ async function main() {
       link: 'https://v0-hot-or-not-nft-app.vercel.app/',
       createdAt: '2025-04-02T00:00:00Z',
       featured: true,
+      displayed: true,
       image: 'https://v0-hot-or-not-nft-app.vercel.app/images/vibe-group.png',
       prompt: `create a simple web app called "hot or not nft" where you enter an ethereum wallet address, and it then displays one nft at a time from the wallet and the user can mark each nft as hot or not. there's then a view to see all the hot nfts in a gallery; from there, you can click on each nft to see a larger detail of it. store the selections in local storage. 
 
@@ -55,7 +56,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://buy-the-vibe.vercel.app/',
-      createdAt: '2025-04-01T00:00:00Z'
+      createdAt: '2025-04-01T00:00:00Z',
+      displayed: true
     },
     {
       id: "3",
@@ -64,7 +66,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://blog-bsxhf0jk6-chris-sykycoms-projects.vercel.app/',
-      createdAt: '2025-03-31T00:00:00Z'
+      createdAt: '2025-03-31T00:00:00Z',
+      displayed: true
     },
     {
       id: "4",
@@ -73,7 +76,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://v0-icebreaker-directory.vercel.app/',
-      createdAt: '2025-03-30T00:00:00Z'
+      createdAt: '2025-03-30T00:00:00Z',
+      displayed: true
     },
     {
       id: "5",
@@ -82,7 +86,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://77kuyhttwmmgi.mocha.app/',
-      createdAt: '2025-03-29T00:00:00Z'
+      createdAt: '2025-03-29T00:00:00Z',
+      displayed: true
     },
     {
       id: "6",
@@ -93,6 +98,7 @@ do not over engineer. focus on the simplest possible path to successful implemen
       link: 'https://vibe-fusion-sandbox.lovable.app/',
       createdAt: '2025-03-28T00:00:00Z',
       featured: false,
+      displayed: true,
       image: 'https://img.freepik.com/free-vector/colorful-vector-vibes-peachy-background-sticker_53876-176240.jpg'
     },
     {
@@ -102,7 +108,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://v0-myspace-profile-interface.vercel.app/',
-      createdAt: '2025-03-27T00:00:00Z'
+      createdAt: '2025-03-27T00:00:00Z',
+      displayed: true
     },
     {
       id: "8",
@@ -111,7 +118,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://v0-myspace-profile-interface.vercel.app/',
-      createdAt: '2025-03-26T00:00:00Z'
+      createdAt: '2025-03-26T00:00:00Z',
+      displayed: true
     },
     {
       id: "9",
@@ -120,7 +128,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://k2mdajewofezm.srcbook.app/docs/getting-started',
-      createdAt: '2025-03-25T00:00:00Z'
+      createdAt: '2025-03-25T00:00:00Z',
+      displayed: true
     },
     {
       id: "10",
@@ -129,7 +138,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
       author: "chrislarsc.eth",
       authorFid: 192300,
       link: 'https://highlight.xyz/mint/base:0x8362558eF4730F4A1EE418EF9EeC1B039643657A',
-      createdAt: '2025-03-24T00:00:00Z'
+      createdAt: '2025-03-24T00:00:00Z',
+      displayed: true
     }
   ];
 
@@ -149,12 +159,14 @@ do not over engineer. focus on the simplest possible path to successful implemen
     const success = await redis.set(CORRECT_KEY, projects);
     
     if (success === 'OK') {
-      console.log('Successfully set projects data with prompt');
+      console.log('Successfully set projects data with prompt and displayed fields');
       
       // Verify the update
       const verifyData = await redis.get(CORRECT_KEY);
       const hasPrompt = verifyData?.[0]?.prompt ? true : false;
+      const hasDisplayed = verifyData?.[0]?.displayed ? true : false;
       console.log('First project has prompt:', hasPrompt);
+      console.log('First project has displayed:', hasDisplayed);
     } else {
       console.error('Failed to update Redis');
       process.exit(1);

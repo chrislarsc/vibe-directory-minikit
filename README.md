@@ -95,3 +95,32 @@ Add these values from your `.env.local` to your Vercel project settings:
 To learn more about MiniKit, see the [Base documentation](https://docs.base.org/builderkits/minikit/quickstart).
 
 To learn more about Next.js, see the [Next.js documentation](https://nextjs.org/docs).
+
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```bash
+# Redis connection details (required)
+REDIS_URL=your-redis-url
+
+# Neynar API key for Farcaster integration (required)
+NEYNAR_API_KEY=your-neynar-api-key
+```
+
+## Farcaster Integration
+
+The app integrates with Farcaster to:
+
+1. Fetch usernames and FIDs of connected wallets
+2. Display Farcaster usernames on project submissions
+3. Store Farcaster FID with project data for future integration
+
+## API Endpoints
+
+- `GET /api/projects` - Get all projects (with optional admin filtering)
+- `POST /api/projects` - Submit a new project
+- `GET /api/projects/[id]` - Get a specific project
+- `PATCH /api/projects/[id]` - Update a project (admin only)
+- `DELETE /api/projects/[id]` - Delete a project (admin only)
+- `GET /api/farcaster/user` - Get Farcaster user details for a wallet address

@@ -9,9 +9,10 @@ import FeaturedProjectCard from "./FeaturedProjectCard";
 interface ProjectListProps {
   projects: Project[];
   userAddress?: Address;
+  onProjectsChanged?: () => void;
 }
 
-export default function ProjectList({ projects, userAddress }: ProjectListProps) {
+export default function ProjectList({ projects, userAddress, onProjectsChanged }: ProjectListProps) {
   const [displayedProjects, setDisplayedProjects] = useState<Project[]>([]);
   
   useEffect(() => {
@@ -21,6 +22,18 @@ export default function ProjectList({ projects, userAddress }: ProjectListProps)
   // Separate featured and regular projects
   const featuredProjects = displayedProjects.filter(p => p.featured);
   const regularProjects = displayedProjects.filter(p => !p.featured);
+  
+  const handleProjectUpdated = () => {
+    if (onProjectsChanged) {
+      onProjectsChanged();
+    }
+  };
+  
+  const handleProjectDeleted = () => {
+    if (onProjectsChanged) {
+      onProjectsChanged();
+    }
+  };
   
   return (
     <div className="mt-4">
@@ -35,6 +48,8 @@ export default function ProjectList({ projects, userAddress }: ProjectListProps)
                 key={project.id}
                 project={project}
                 userAddress={userAddress}
+                onProjectUpdated={handleProjectUpdated}
+                onProjectDeleted={handleProjectDeleted}
               />
             ))}
           </div>
@@ -48,6 +63,8 @@ export default function ProjectList({ projects, userAddress }: ProjectListProps)
             key={project.id} 
             project={project}
             userAddress={userAddress}
+            onProjectUpdated={handleProjectUpdated}
+            onProjectDeleted={handleProjectDeleted}
           />
         ))}
       </div>

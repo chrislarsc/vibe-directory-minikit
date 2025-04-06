@@ -44,11 +44,14 @@ if (typeof window === 'undefined') {
 
 /**
  * Get all projects
+ * @param showAll If true, returns all projects including those not yet approved for display (admin only)
  */
-export async function getAllProjects(): Promise<Project[]> {
+export async function getAllProjects(showAll: boolean = false): Promise<Project[]> {
   if (!redis) {
     console.warn('Redis not available, returning initial projects');
-    return [...initialProjects];
+    return showAll 
+      ? [...initialProjects]
+      : [...initialProjects].filter(p => p.displayed !== false);
   }
 
   try {
@@ -57,7 +60,9 @@ export async function getAllProjects(): Promise<Project[]> {
     if (!projectsData) {
       console.log('No projects found in Redis, initializing...');
       await initializeProjectsStore();
-      return [...initialProjects];
+      return showAll 
+        ? [...initialProjects]
+        : [...initialProjects].filter(p => p.displayed !== false);
     }
     
     // Handle different types of responses from Redis
@@ -71,7 +76,9 @@ export async function getAllProjects(): Promise<Project[]> {
         console.error('Error parsing projects from Redis:', parseError);
         // If we can't parse the JSON, reinitialize and return defaults
         await initializeProjectsStore();
-        return [...initialProjects];
+        return showAll 
+          ? [...initialProjects]
+          : [...initialProjects].filter(p => p.displayed !== false);
       }
     } else if (typeof projectsData === 'object' && Array.isArray(projectsData)) {
       // If Redis returned the data already as an array
@@ -79,17 +86,22 @@ export async function getAllProjects(): Promise<Project[]> {
     } else {
       console.error('Unexpected Redis data format:', typeof projectsData);
       await initializeProjectsStore();
-      return [...initialProjects];
+      return showAll 
+        ? [...initialProjects]
+        : [...initialProjects].filter(p => p.displayed !== false);
     }
     
     // Debug: Check if any projects have a prompt field
     const hasPromptsCount = projects.filter(p => p.prompt).length;
     console.log(`Returning ${projects.length} projects, ${hasPromptsCount} with prompts`);
     
-    return projects;
+    // Filter out non-displayed projects unless showAll is true
+    return showAll ? projects : projects.filter(p => p.displayed !== false);
   } catch (error) {
     console.error('Error fetching projects from Redis:', error);
-    return [...initialProjects]; // Fallback to initial projects on error
+    return showAll 
+      ? [...initialProjects]
+      : [...initialProjects].filter(p => p.displayed !== false);
   }
 }
 
@@ -139,7 +151,7 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
 /**
  * Update an existing project
  */
-export async function updateProject(id: string, projectData: Partial<Project>): Promise<Project | null> {
+export async function updateProject(id: string, projectData: Partial<Project>, adminAddress?: string): Promise<Project | null> {
   if (!redis) {
     console.warn('Redis not available, project will not be updated');
     return null;
@@ -177,7 +189,7 @@ export async function updateProject(id: string, projectData: Partial<Project>): 
 /**
  * Delete a project
  */
-export async function deleteProject(id: string): Promise<boolean> {
+export async function deleteProject(id: string, adminAddress?: string): Promise<boolean> {
   if (!redis) {
     console.warn('Redis not available, project will not be deleted');
     return false;

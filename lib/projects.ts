@@ -9,6 +9,7 @@ export type Project = {
   categories?: string[];     // Optional: Categories (not implemented initially)
   createdAt: string;         // Required: Creation timestamp for chronological sorting
   featured?: boolean;        // Optional: Whether to display prominently
+  displayed?: boolean;       // Optional: Whether to display at all (requires admin approval)
   image?: string;            // Optional: Image URL for featured projects
   prompt?: string;           // Optional: Project prompt
 };
@@ -24,6 +25,7 @@ export const projects: Project[] = [
     link: 'https://v0-hot-or-not-nft-app.vercel.app/',
     createdAt: '2025-04-02T00:00:00Z',
     featured: true,
+    displayed: true,
     image: 'https://v0-hot-or-not-nft-app.vercel.app/images/vibe-group.png',
     prompt: `create a simple web app called "hot or not nft" where you enter an ethereum wallet address, and it then displays one nft at a time from the wallet and the user can mark each nft as hot or not. there's then a view to see all the hot nfts in a gallery; from there, you can click on each nft to see a larger detail of it. store the selections in local storage. 
 
@@ -45,7 +47,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://buy-the-vibe.vercel.app/',
-    createdAt: '2025-04-01T00:00:00Z'
+    createdAt: '2025-04-01T00:00:00Z',
+    displayed: true
   },
   {
     id: "3",
@@ -54,7 +57,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://blog-bsxhf0jk6-chris-sykycoms-projects.vercel.app/',
-    createdAt: '2025-03-31T00:00:00Z'
+    createdAt: '2025-03-31T00:00:00Z',
+    displayed: true
   },
   {
     id: "4",
@@ -63,7 +67,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://v0-icebreaker-directory.vercel.app/',
-    createdAt: '2025-03-30T00:00:00Z'
+    createdAt: '2025-03-30T00:00:00Z',
+    displayed: true
   },
   {
     id: "5",
@@ -72,7 +77,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://77kuyhttwmmgi.mocha.app/',
-    createdAt: '2025-03-29T00:00:00Z'
+    createdAt: '2025-03-29T00:00:00Z',
+    displayed: true
   },
   {
     id: "6",
@@ -83,6 +89,7 @@ do not over engineer. focus on the simplest possible path to successful implemen
     link: 'https://vibe-fusion-sandbox.lovable.app/',
     createdAt: '2025-03-28T00:00:00Z',
     featured: false,
+    displayed: true,
     image: 'https://img.freepik.com/free-vector/colorful-vector-vibes-peachy-background-sticker_53876-176240.jpg'
   },
   {
@@ -92,7 +99,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://v0-myspace-profile-interface.vercel.app/',
-    createdAt: '2025-03-27T00:00:00Z'
+    createdAt: '2025-03-27T00:00:00Z',
+    displayed: true
   },
   {
     id: "8",
@@ -101,7 +109,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://v0-myspace-profile-interface.vercel.app/',
-    createdAt: '2025-03-26T00:00:00Z'
+    createdAt: '2025-03-26T00:00:00Z',
+    displayed: true
   },
   {
     id: "9",
@@ -110,7 +119,8 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://k2mdajewofezm.srcbook.app/docs/getting-started',
-    createdAt: '2025-03-25T00:00:00Z'
+    createdAt: '2025-03-25T00:00:00Z',
+    displayed: true
   },
   {
     id: "10",
@@ -119,6 +129,7 @@ do not over engineer. focus on the simplest possible path to successful implemen
     author: "chrislarsc.eth",
     authorFid: 192300,
     link: 'https://highlight.xyz/mint/base:0x8362558eF4730F4A1EE418EF9EeC1B039643657A',
-    createdAt: '2025-03-24T00:00:00Z'
+    createdAt: '2025-03-24T00:00:00Z',
+    displayed: true
   }
 ]; 

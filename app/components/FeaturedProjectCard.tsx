@@ -6,19 +6,37 @@ import type { Project } from "@/lib/projects";
 import type { Address } from 'viem';
 import { useViews } from "./ViewContext";
 import PromptModal from "./PromptModal";
+import AdminControls from "./AdminControls";
+import { updateProject, deleteProject } from "@/lib/projectService";
+import { ADMIN_ADDRESSES } from "@/lib/constants";
 
 interface FeaturedProjectCardProps {
   project: Project;
   userAddress?: Address;
+  onProjectUpdated?: () => void;
+  onProjectDeleted?: () => void;
 }
 
-export default function FeaturedProjectCard({ project, userAddress }: FeaturedProjectCardProps) {
+export default function FeaturedProjectCard({ 
+  project, 
+  userAddress,
+  onProjectUpdated,
+  onProjectDeleted
+}: FeaturedProjectCardProps) {
   const openUrl = useOpenUrl();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const { hasViewedProject, trackProjectView } = useViews();
   
   const hasViewed = hasViewedProject(project.id);
+  
+  // Check if user is admin
+  const isAdmin = !!userAddress && ADMIN_ADDRESSES.some(
+    addr => addr.toLowerCase() === userAddress.toLowerCase()
+  );
+
+  // Status indicator for pending projects (only shown to admins)
+  const isPendingApproval = isAdmin && !project.displayed;
   
   // Debug log
   console.log(`FeaturedProjectCard for project ${project.id}:`, { 
@@ -50,8 +68,34 @@ export default function FeaturedProjectCard({ project, userAddress }: FeaturedPr
     }
   };
   
+  const handleUpdateProject = async (updatedFields: Partial<Project>) => {
+    if (!isAdmin || !userAddress) return;
+    
+    const updated = await updateProject(project.id, updatedFields, userAddress);
+    
+    if (updated && onProjectUpdated) {
+      onProjectUpdated();
+    }
+  };
+  
+  const handleDeleteProject = async () => {
+    if (!isAdmin || !userAddress) return;
+    
+    const deleted = await deleteProject(project.id, userAddress);
+    
+    if (deleted && onProjectDeleted) {
+      onProjectDeleted();
+    }
+  };
+  
   return (
-    <div className="p-4 border rounded-lg bg-white shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className={`p-4 border rounded-lg bg-white shadow-md overflow-hidden hover:shadow-lg transition-shadow ${isPendingApproval ? 'border-yellow-400' : ''}`}>
+      {isPendingApproval && (
+        <div className="mb-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full inline-block">
+          Pending Approval
+        </div>
+      )}
+      
       <div className="flex flex-col md:flex-row">
         {project.image && (
           <div className="w-full md:w-1/3 mb-4 md:mb-0 md:mr-4">
@@ -104,6 +148,15 @@ export default function FeaturedProjectCard({ project, userAddress }: FeaturedPr
           </div>
         </div>
       </div>
+      
+      {isAdmin && (
+        <AdminControls 
+          project={project}
+          onUpdate={handleUpdateProject}
+          onDelete={handleDeleteProject}
+          adminAddress={userAddress}
+        />
+      )}
       
       {project.prompt && (
         <PromptModal

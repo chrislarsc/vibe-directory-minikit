@@ -35,7 +35,10 @@ export default function App() {
       try {
         // Add a timestamp to bust the cache
         const timestamp = new Date().getTime();
-        const response = await fetch(`/api/projects?t=${timestamp}`, {
+        // If user is admin, include all projects (including non-displayed ones)
+        const showAll = isAdmin ? 'true' : 'false';
+        
+        const response = await fetch(`/api/projects?t=${timestamp}&showAll=${showAll}&adminAddress=${address || ''}`, {
           cache: 'no-store', // Force fresh fetch every time
           headers: {
             'Pragma': 'no-cache',
@@ -59,7 +62,34 @@ export default function App() {
     };
 
     fetchProjects();
-  }, []);
+  }, [address, isAdmin]);
+
+  // Handler for when projects are updated by admin actions
+  const handleProjectsChanged = () => {
+    // Refetch projects
+    const fetchProjects = async () => {
+      try {
+        const timestamp = new Date().getTime();
+        const showAll = isAdmin ? 'true' : 'false';
+        
+        const response = await fetch(`/api/projects?t=${timestamp}&showAll=${showAll}&adminAddress=${address || ''}`, {
+          cache: 'no-store',
+          headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProjects(data.data);
+        }
+      } catch (error) {
+        console.error('Error refreshing projects:', error);
+      }
+    };
+    
+    fetchProjects();
+  };
 
   useEffect(() => {
     if (!isFrameReady) {
@@ -165,6 +195,14 @@ export default function App() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {address && (
+            <Link
+              href="/submit"
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+            >
+              + Submit Project
+            </Link>
+          )}
           <WalletButton />
           <div className="pr-1 justify-end flex items-center gap-2">
             {saveFrameButton}
@@ -175,7 +213,11 @@ export default function App() {
       <main className="px-4">
         <ViewProvider userAddress={address}>
           {address && <ViewTracker />}
-          <ProjectList projects={projects} userAddress={address} />
+          <ProjectList 
+            projects={projects} 
+            userAddress={address}
+            onProjectsChanged={handleProjectsChanged}
+          />
         </ViewProvider>
       </main>
 
