@@ -38,42 +38,31 @@ export default function FeaturedProjectCard({
   // Status indicator for pending projects (only shown to admins)
   const isPendingApproval = isAdmin && !project.displayed;
   
-  // Debug log
-  console.log(`FeaturedProjectCard for project ${project.id}:`, { 
-    title: project.title, 
-    hasPrompt: !!project.prompt,
-    promptLength: project.prompt?.length
-  });
-  
   const handleProjectClick = async () => {
     if (!project.link) return;
     
+    // Only track view and make API call if:
+    // 1. User has wallet connected
+    // 2. User hasn't viewed this project before
     if (userAddress && !hasViewed) {
       setIsProcessing(true);
       try {
-        // Track the view using our context
         await trackProjectView(project.id);
-        // Then open URL
-        openUrl(project.link);
       } catch (error) {
         console.error("Failed to track project view:", error);
-        // Open URL anyway if tracking fails
-        openUrl(project.link);
       } finally {
         setIsProcessing(false);
       }
-    } else {
-      // Just open URL if wallet not connected or already viewed
-      openUrl(project.link);
     }
+    
+    // Always open the URL regardless of view tracking
+    openUrl(project.link);
   };
   
   const handleUpdateProject = async (updatedFields: Partial<Project>) => {
     if (!isAdmin || !userAddress) return;
     
     try {
-      console.log(`Updating featured project with ID: ${project.id}`, updatedFields);
-      
       const response = await fetch(`/api/projects/${project.id}`, {
         method: 'PATCH',
         headers: {
@@ -88,17 +77,15 @@ export default function FeaturedProjectCard({
       const data = await response.json();
       
       if (!data.success) {
-        console.error(`Update failed for featured project ${project.id}:`, data.error);
+        console.error(`Update failed for project ${project.id}:`, data.error);
         throw new Error(data.error || 'Failed to update project');
       }
-      
-      console.log(`Successfully updated featured project ${project.id}`);
       
       if (onProjectUpdated) {
         onProjectUpdated();
       }
     } catch (error) {
-      console.error(`Error updating featured project ${project.id}:`, error);
+      console.error(`Error updating project ${project.id}:`, error);
       throw error;
     }
   };
@@ -107,8 +94,6 @@ export default function FeaturedProjectCard({
     if (!isAdmin || !userAddress) return;
     
     try {
-      console.log(`Deleting featured project with ID: ${project.id}`);
-      
       const response = await fetch(`/api/projects/${project.id}?adminAddress=${userAddress}`, {
         method: 'DELETE'
       });
@@ -116,17 +101,15 @@ export default function FeaturedProjectCard({
       const data = await response.json();
       
       if (!data.success) {
-        console.error(`Delete failed for featured project ${project.id}:`, data.error);
+        console.error(`Delete failed for project ${project.id}:`, data.error);
         throw new Error(data.error || 'Failed to delete project');
       }
-      
-      console.log(`Successfully deleted featured project ${project.id}`);
       
       if (onProjectDeleted) {
         onProjectDeleted();
       }
     } catch (error) {
-      console.error(`Error deleting featured project ${project.id}:`, error);
+      console.error(`Error deleting project ${project.id}:`, error);
       throw error;
     }
   };

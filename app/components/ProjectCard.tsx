@@ -41,26 +41,28 @@ export default function ProjectCard({
   const handleProjectClick = async () => {
     if (!project.link) return;
     
-    setIsProcessing(true);
-    
-    try {
-      // Track the view using our context
-      await trackProjectView(project.id);
-      // Then open URL
-      openUrl(project.link);
-    } catch (error) {
-      console.error("Error processing project click:", error);
-    } finally {
-      setIsProcessing(false);
+    // Only track view and make API call if:
+    // 1. User has wallet connected
+    // 2. User hasn't viewed this project before
+    if (userAddress && !hasViewed) {
+      setIsProcessing(true);
+      try {
+        await trackProjectView(project.id);
+      } catch (error) {
+        console.error("Failed to track project view:", error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
+    
+    // Always open the URL regardless of view tracking
+    openUrl(project.link);
   };
   
   const handleUpdateProject = async (updatedFields: Partial<Project>) => {
     if (!isAdmin || !userAddress) return;
     
     try {
-      console.log(`Updating project with ID: ${project.id}`, updatedFields);
-      
       const response = await fetch(`/api/projects/${project.id}`, {
         method: 'PATCH',
         headers: {
@@ -78,8 +80,6 @@ export default function ProjectCard({
         console.error(`Update failed for project ${project.id}:`, data.error);
         throw new Error(data.error || 'Failed to update project');
       }
-      
-      console.log(`Successfully updated project ${project.id}`);
       
       if (onProjectUpdated) {
         onProjectUpdated();

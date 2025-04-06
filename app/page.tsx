@@ -47,11 +47,6 @@ export default function App() {
         });
         const data = await response.json();
         if (data.success) {
-          console.log("Fetched projects:", data.data.length);
-          console.log("Projects with prompts:", data.data.filter((p: Project) => p.prompt).length);
-          if (data.data.length > 0) {
-            console.log("First project has prompt:", !!data.data[0].prompt);
-          }
           setProjects(data.data);
         } else {
           console.error('Failed to fetch projects:', data.error);
@@ -66,15 +61,11 @@ export default function App() {
 
   // Handler for when projects are updated by admin actions
   const handleProjectsChanged = () => {
-    console.log("Project changed, refreshing project list...");
-    
     // Refetch projects
     const fetchProjects = async () => {
       try {
         const timestamp = new Date().getTime();
         const showAll = isAdmin ? 'true' : 'false';
-        
-        console.log(`Fetching projects with showAll=${showAll}, admin=${isAdmin}`);
         
         const response = await fetch(`/api/projects?t=${timestamp}&showAll=${showAll}&adminAddress=${address || ''}`, {
           cache: 'no-store',
@@ -85,7 +76,6 @@ export default function App() {
         });
         const data = await response.json();
         if (data.success) {
-          console.log(`Refreshed projects: ${data.data.length} total`);
           setProjects(data.data);
         } else {
           console.error('Failed to refresh projects:', data.error);
@@ -102,12 +92,7 @@ export default function App() {
     if (!isFrameReady) {
       setFrameReady();
     }
-    
-    // Log when loaded in a frame context
-    if (context?.client) {
-      console.log('App loaded in Farcaster frame context');
-    }
-  }, [setFrameReady, isFrameReady, context?.client]);
+  }, [setFrameReady, isFrameReady]);
 
   // Check if connected address is admin
   useEffect(() => {
@@ -127,7 +112,6 @@ export default function App() {
       
       if (result) {
         setFrameAdded(true);
-        console.log('Frame added with token:', result.token);
         
         // Store the token in our backend for future notifications
         if (address) {
