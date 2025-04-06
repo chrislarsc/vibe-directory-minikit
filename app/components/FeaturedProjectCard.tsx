@@ -157,19 +157,19 @@ export default function FeaturedProjectCard({
           <p className="mb-4 text-gray-800">{project.description}</p>
           
           <div className="flex items-center">
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {project.link ? (
                 <button 
                   onClick={handleProjectClick}
                   disabled={isProcessing}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                  className={`px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap text-sm ${
                     isProcessing ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {isProcessing ? 'Processing...' : 'Check out project'}
+                  {isProcessing ? 'Processing...' : 'View project'}
                 </button>
               ) : (
-                <span className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg inline-block">
+                <span className="px-3 py-2 bg-gray-300 text-gray-600 rounded-lg inline-block text-sm whitespace-nowrap">
                   Coming soon
                 </span>
               )}
@@ -177,18 +177,18 @@ export default function FeaturedProjectCard({
               {project.prompt && (
                 <button 
                   onClick={() => setIsPromptModalOpen(true)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm whitespace-nowrap"
                 >
-                  See prompt
+                  Prompt
                 </button>
               )}
+              
+              {userAddress && hasViewed && (
+                <span className="px-3 py-1 text-xs text-green-600 bg-green-100 rounded-full whitespace-nowrap flex items-center">
+                  <span className="mr-1">Viewed</span> <span className="text-green-600">✓</span>
+                </span>
+              )}
             </div>
-            
-            {userAddress && hasViewed && (
-              <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                Viewed ✓
-              </span>
-            )}
           </div>
         </div>
       </div>
