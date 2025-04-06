@@ -9,7 +9,7 @@ import ProjectSubmitForm from "../components/ProjectSubmitForm";
 
 export default function SubmitPage() {
   const { address } = useAccount();
-  const { setFrameReady, isFrameReady } = useMiniKit();
+  const { setFrameReady, isFrameReady, context } = useMiniKit();
   const [userName, setUserName] = useState<string | null>(null);
   const [userFid, setUserFid] = useState<number | undefined>(undefined);
   const [farcasterStatus, setFarcasterStatus] = useState<string>('Not checked');
@@ -19,7 +19,12 @@ export default function SubmitPage() {
     if (!isFrameReady) {
       setFrameReady();
     }
-  }, [isFrameReady, setFrameReady]);
+    
+    // Log when loaded in a frame context
+    if (context?.client) {
+      console.log('Submit page loaded in Farcaster frame context');
+    }
+  }, [isFrameReady, setFrameReady, context?.client]);
   
   // Try to get the user's Farcaster FID and username
   useEffect(() => {

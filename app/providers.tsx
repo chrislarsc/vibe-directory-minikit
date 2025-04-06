@@ -17,6 +17,7 @@ export function Providers(props: { children: ReactNode }) {
           logo: process.env.NEXT_PUBLIC_ICON_URL,
         },
       }}
+      autoConnect={true}
     >
       {props.children}
     </MiniKitProvider>

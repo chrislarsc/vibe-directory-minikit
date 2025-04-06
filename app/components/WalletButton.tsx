@@ -1,13 +1,41 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 export default function WalletButton() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const [isConnecting, setIsConnecting] = useState(false);
+  const { context } = useMiniKit();
+
+  // Auto-connect when component mounts if in frame context and wallet is available
+  useEffect(() => {
+    const autoConnect = async () => {
+      // Only attempt auto-connect if:
+      // 1. Not already connected
+      // 2. Has connectors available
+      // 3. Is in a Farcaster frame (has client info)
+      if (!isConnected && connectors.length > 0 && context?.client) {
+        try {
+          setIsConnecting(true);
+          const connector = connectors[0];
+          if (connector) {
+            await connect({ connector });
+            console.log('Auto-connected wallet from Farcaster frame context');
+          }
+        } catch (error) {
+          console.error('Failed to auto-connect wallet:', error);
+        } finally {
+          setIsConnecting(false);
+        }
+      }
+    };
+
+    autoConnect();
+  }, [isConnected, connect, connectors, context?.client]);
 
   const handleConnectClick = async () => {
     setIsConnecting(true);

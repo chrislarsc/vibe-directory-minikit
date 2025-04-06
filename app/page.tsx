@@ -102,7 +102,12 @@ export default function App() {
     if (!isFrameReady) {
       setFrameReady();
     }
-  }, [setFrameReady, isFrameReady]);
+    
+    // Log when loaded in a frame context
+    if (context?.client) {
+      console.log('App loaded in Farcaster frame context');
+    }
+  }, [setFrameReady, isFrameReady, context?.client]);
 
   // Check if connected address is admin
   useEffect(() => {
