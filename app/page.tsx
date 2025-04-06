@@ -144,6 +144,22 @@ export default function App() {
     }
   }, [addFrame, address, sendNotification]);
 
+  // Auto-trigger "Add Frame" when user first opens the app
+  useEffect(() => {
+    // Only attempt to auto-add frame if:
+    // 1. In a frame context
+    // 2. Frame is not already added
+    // 3. User hasn't already clicked the add button in this session
+    if (context && !context.client.added && !frameAdded) {
+      // Small delay to ensure UI is fully loaded
+      const timer = setTimeout(() => {
+        handleAddFrame();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [context, context?.client.added, frameAdded, handleAddFrame]);
+
   const saveFrameButton = useMemo(() => {
     if (context && !context.client.added) {
       return (
