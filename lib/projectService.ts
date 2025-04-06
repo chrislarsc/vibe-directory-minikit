@@ -13,19 +13,31 @@ export async function initializeProjectsStore(): Promise<void> {
   }
 
   try {
-    const projectsExist = await redis.exists(PROJECTS_KEY);
-    if (!projectsExist) {
-      console.log('Initializing projects in Redis...');
-      // Ensure we're storing a string, not an object reference
-      await redis.set(PROJECTS_KEY, JSON.stringify(initialProjects));
+    // Clear any corrupted data
+    await redis.del(PROJECTS_KEY);
+    
+    // Stringify the projects array properly
+    const projectsJsonString = JSON.stringify(initialProjects);
+    console.log(`Initializing projects in Redis with ${initialProjects.length} projects`);
+    
+    // Store the stringified data
+    const success = await redis.set(PROJECTS_KEY, projectsJsonString);
+    if (success === 'OK') {
+      console.log('Projects initialized in Redis successfully');
+    } else {
+      console.error('Failed to initialize projects in Redis');
     }
   } catch (error) {
     console.error('Error initializing projects in Redis:', error);
   }
 }
 
-// Initialize immediately
-initializeProjectsStore().catch(console.error);
+// Initialize immediately on server start
+if (typeof window === 'undefined') {
+  initializeProjectsStore().catch(error => {
+    console.error('Failed to initialize projects store:', error);
+  });
+}
 
 /**
  * Get all projects
@@ -38,12 +50,22 @@ export async function getAllProjects(): Promise<Project[]> {
 
   try {
     const projectsJson = await redis.get<string>(PROJECTS_KEY);
+    
     if (!projectsJson) {
-      // No projects found in Redis, initialize and return defaults
+      console.log('No projects found in Redis, initializing...');
       await initializeProjectsStore();
       return [...initialProjects];
     }
-    return JSON.parse(projectsJson) as Project[];
+    
+    try {
+      // Try to parse the JSON
+      return JSON.parse(projectsJson) as Project[];
+    } catch (parseError) {
+      console.error('Error parsing projects from Redis:', parseError);
+      // If we can't parse the JSON, reinitialize and return defaults
+      await initializeProjectsStore();
+      return [...initialProjects];
+    }
   } catch (error) {
     console.error('Error fetching projects from Redis:', error);
     return [...initialProjects]; // Fallback to initial projects on error
@@ -79,8 +101,13 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
     // Add new project at the beginning of the array
     const updatedProjects = [newProject, ...projects];
     
-    // Save back to Redis - ensure we're passing a string
-    await redis.set(PROJECTS_KEY, JSON.stringify(updatedProjects));
+    // Save back to Redis - ensure proper serialization
+    const projectsJson = JSON.stringify(updatedProjects);
+    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    
+    if (success !== 'OK') {
+      throw new Error('Redis SET operation failed');
+    }
     
     return newProject;
   } catch (error) {
@@ -114,7 +141,12 @@ export async function updateProject(id: string, projectData: Partial<Project>): 
     projects[index] = updatedProject;
     
     // Save back to Redis - ensure proper serialization
-    await redis.set(PROJECTS_KEY, JSON.stringify(projects));
+    const projectsJson = JSON.stringify(projects);
+    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    
+    if (success !== 'OK') {
+      throw new Error('Redis SET operation failed');
+    }
     
     return updatedProject;
   } catch (error) {
@@ -140,8 +172,13 @@ export async function deleteProject(id: string): Promise<boolean> {
       return false; // No project was deleted
     }
     
-    // Save back to Redis
-    await redis.set(PROJECTS_KEY, JSON.stringify(filteredProjects));
+    // Save back to Redis - ensure proper serialization
+    const projectsJson = JSON.stringify(filteredProjects);
+    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    
+    if (success !== 'OK') {
+      throw new Error('Redis SET operation failed');
+    }
     
     return true;
   } catch (error) {

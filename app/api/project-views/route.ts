@@ -4,25 +4,22 @@ import {
   trackMultipleViews,
   getUserViewedProjects, 
   getUserViewCount, 
-  getProjectViewCount,
-  getMultipleProjectViewCounts
+  getProjectViewCount
 } from '@/lib/viewTracker';
 
 /**
  * GET handler to retrieve viewing stats for a user or project
  * ?userId=<userId> - Get projects viewed by user and count
  * ?projectId=<projectId> - Get view count for a project
- * ?projectIds=id1,id2,id3 - Get view counts for multiple projects
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
   const projectId = searchParams.get('projectId');
-  const projectIdsParam = searchParams.get('projectIds');
   
-  if (!userId && !projectId && !projectIdsParam) {
+  if (!userId && !projectId) {
     return NextResponse.json(
-      { success: false, error: 'Missing userId, projectId, or projectIds parameter' },
+      { success: false, error: 'Missing userId or projectId parameter' },
       { status: 400 }
     );
   }
@@ -57,21 +54,6 @@ export async function GET(request: Request) {
         data: {
           projectId,
           viewCount
-        }
-      });
-      
-      response.headers.set('Cache-Control', 'public, max-age=300');
-      return response;
-    } else if (projectIdsParam) {
-      // Get view counts for multiple projects
-      const projectIds = projectIdsParam.split(',');
-      const viewCounts = await getMultipleProjectViewCounts(projectIds);
-      
-      // Add cache headers (5 minutes for project data)
-      const response = NextResponse.json({
-        success: true,
-        data: {
-          viewCounts
         }
       });
       

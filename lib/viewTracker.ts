@@ -153,45 +153,4 @@ export async function getProjectViewCount(projectId: string): Promise<number> {
     console.error('Error counting project views:', error);
     return 0;
   }
-}
-
-/**
- * Get view counts for multiple projects in a single operation
- */
-export async function getMultipleProjectViewCounts(projectIds: string[]): Promise<Record<string, number>> {
-  if (!redis || !projectIds.length) {
-    return {};
-  }
-
-  try {
-    const pipeline = redis.pipeline();
-    
-    // Add get commands for each project counter
-    projectIds.forEach(id => {
-      pipeline.get(getProjectViewCountKey(id));
-    });
-    
-    // Execute all commands at once
-    const results = await pipeline.exec();
-    
-    // Map results to project IDs
-    const viewCounts: Record<string, number> = {};
-    if (results) {
-      results.forEach((result, index) => {
-        const projectId = projectIds[index];
-        if (result && Array.isArray(result) && result.length > 1) {
-          const countValue = result[1];
-          const count = typeof countValue === 'string' ? parseInt(countValue, 10) : 0;
-          viewCounts[projectId] = count;
-        } else {
-          viewCounts[projectId] = 0;
-        }
-      });
-    }
-    
-    return viewCounts;
-  } catch (error) {
-    console.error('Error getting multiple project view counts:', error);
-    return {};
-  }
 } 
