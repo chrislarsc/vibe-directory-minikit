@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import Link from "next/link";
 import { ADMIN_ADDRESSES } from "@/lib/constants";
 import type { Project } from "@/lib/projects";
-import { addProject } from "@/lib/projectService";
+import { addProject, getAllProjects } from "@/lib/projectService";
 
 export default function AdminPage() {
   const [newProject, setNewProject] = useState<Omit<Project, 'id'>>({

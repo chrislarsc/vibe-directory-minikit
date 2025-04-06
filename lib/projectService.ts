@@ -150,6 +150,9 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
 
 /**
  * Update an existing project
+ * @param id Project ID to update
+ * @param projectData Fields to update
+ * @param adminAddress Address of the admin making the update (used for auth in API layer)
  */
 export async function updateProject(id: string, projectData: Partial<Project>, adminAddress?: string): Promise<Project | null> {
   if (!redis) {
@@ -188,6 +191,8 @@ export async function updateProject(id: string, projectData: Partial<Project>, a
 
 /**
  * Delete a project
+ * @param id Project ID to delete
+ * @param adminAddress Address of the admin making the deletion (used for auth in API layer)
  */
 export async function deleteProject(id: string, adminAddress?: string): Promise<boolean> {
   if (!redis) {

@@ -3,7 +3,8 @@
 import { useViews } from './ViewContext';
 
 export default function ViewTracker() {
-  const { viewedProjects, viewCount, loading, error } = useViews();
+  // Destructure only what we need, avoiding the unused viewCount
+  const { viewedProjects, loading, error } = useViews();
   
   if (loading) {
     return (

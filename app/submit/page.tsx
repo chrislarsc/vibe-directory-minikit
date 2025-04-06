@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
@@ -11,7 +10,6 @@ import ProjectSubmitForm from "../components/ProjectSubmitForm";
 export default function SubmitPage() {
   const { address } = useAccount();
   const { setFrameReady, isFrameReady } = useMiniKit();
-  const router = useRouter();
   const [userName, setUserName] = useState<string | null>(null);
   const [userFid, setUserFid] = useState<number | undefined>(undefined);
   

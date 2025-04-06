@@ -6,9 +6,11 @@ import type { Address } from 'viem';
 
 interface AdminControlsProps {
   project: Project;
-  onUpdate: (updatedProject: Partial<Project>) => Promise<void>;
+  onUpdate: (data: Partial<Project>) => Promise<void>;
   onDelete: () => Promise<void>;
-  adminAddress?: Address;
+  // adminAddress is used in the API layer for authentication
+  // but not directly in this component
+  adminAddress?: string;
 }
 
 export default function AdminControls({ 

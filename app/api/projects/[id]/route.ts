@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getProjectById, updateProject, deleteProject } from '@/lib/projectService';
 import { ADMIN_ADDRESSES } from '@/lib/constants';
+// Project type is used implicitly in the request body
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Project } from '@/lib/projects';
 
 /**

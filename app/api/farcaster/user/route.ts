@@ -3,6 +3,15 @@ import { NextResponse } from 'next/server';
 // Get API key from environment variable
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
 
+// Define Farcaster user type
+interface FarcasterUser {
+  fid: number;
+  username: string;
+  display_name: string;
+  pfp_url: string;
+  [key: string]: unknown;
+}
+
 export async function GET(request: Request) {
   // Check if API key is configured
   if (!NEYNAR_API_KEY) {
@@ -63,7 +72,7 @@ export async function GET(request: Request) {
   }
 }
 
-async function fetchUsersByVerifiedAddress(address: string): Promise<any[]> {
+async function fetchUsersByVerifiedAddress(address: string): Promise<FarcasterUser[]> {
   try {
     // In production, we would use a more robust approach
     // For example, we could query Neynar for users with verified ETH addresses
@@ -92,7 +101,11 @@ async function fetchUsersByVerifiedAddress(address: string): Promise<any[]> {
   }
 }
 
-async function fetchUsersByFid(fid: string): Promise<any[]> {
+// This function is kept for potential future use but not currently used
+// Remove the eslint-disable comment when the function is used
+/* eslint-disable @typescript-eslint/no-unused-vars */
+async function fetchUsersByFid(fid: string): Promise<FarcasterUser[]> {
+/* eslint-enable @typescript-eslint/no-unused-vars */
   const url = `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`;
   
   const response = await fetch(url, {
