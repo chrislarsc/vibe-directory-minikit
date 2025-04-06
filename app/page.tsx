@@ -166,7 +166,7 @@ export default function App() {
         <button
           type="button"
           onClick={handleAddFrame}
-          className="cursor-pointer bg-transparent font-semibold text-sm"
+          className="cursor-pointer bg-transparent font-semibold text-sm whitespace-nowrap w-24 text-right"
         >
           + SAVE FRAME
         </button>
@@ -175,14 +175,15 @@ export default function App() {
 
     if (frameAdded) {
       return (
-        <div className="flex items-center space-x-1 text-sm font-semibold animate-fade-out">
+        <div className="flex items-center space-x-1 text-sm font-semibold animate-fade-out w-24 justify-end">
           <Check />
           <span>SAVED</span>
         </div>
       );
     }
 
-    return null;
+    // Return an empty div with the same width to maintain layout
+    return <div className="w-24"></div>;
   }, [context, handleAddFrame, frameAdded]);
 
   return (
@@ -199,9 +200,11 @@ export default function App() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <WalletButton />
-          <div className="pr-1 justify-end flex items-center gap-2">
-            {saveFrameButton}
+          <div className="flex items-center justify-end transition-all duration-300 ease-in-out">
+            <WalletButton />
+            <div className="ml-2">
+              {saveFrameButton}
+            </div>
           </div>
         </div>
       </header>

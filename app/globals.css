@@ -39,6 +39,16 @@ body {
   transform: translate(10px, 20px) !important;
 }
 
+/* Animation for fade out with visibility instead of display:none to maintain layout */
+@keyframes customFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+.animate-fade-out {
+  animation: customFadeOut 1s ease-out 1.5s forwards;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
