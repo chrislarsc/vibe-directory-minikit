@@ -148,7 +148,7 @@ export async function getProjectViewCount(projectId: string): Promise<number> {
   try {
     // Get the count from the counter key directly
     const count = await redis.get(getProjectViewCountKey(projectId));
-    return count ? parseInt(count, 10) : 0;
+    return count ? parseInt(String(count), 10) : 0;
   } catch (error) {
     console.error('Error counting project views:', error);
     return 0;
