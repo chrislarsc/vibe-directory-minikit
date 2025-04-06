@@ -185,6 +185,9 @@ export async function updateProject(id: string, projectData: Partial<Project>, a
       return null;
     }
     
+    // Check if display status is changing from false to true
+    const isBeingDisplayed = projects[index].displayed === false && projectData.displayed === true;
+    
     const updatedProject = {
       ...projects[index],
       ...projectData,
@@ -200,10 +203,82 @@ export async function updateProject(id: string, projectData: Partial<Project>, a
       throw new Error('Redis SET operation failed');
     }
     
+    // If the project is being displayed for the first time, send notification to users
+    if (isBeingDisplayed) {
+      try {
+        await notifyProjectSubmitted(updatedProject);
+      } catch (notifyError) {
+        console.error('Error sending notification:', notifyError);
+        // We don't throw here as we don't want to fail the update
+      }
+    }
+    
     return updatedProject;
   } catch (error) {
     console.error('Error updating project in Redis:', error);
     throw new Error('Failed to update project in database');
+  }
+}
+
+/**
+ * Notify users about a newly displayed project
+ */
+async function notifyProjectSubmitted(project: Project): Promise<void> {
+  if (!redis) {
+    console.warn('Redis not available, notifications will not be sent');
+    return;
+  }
+
+  try {
+    // Get project name and author for notification
+    const projectName = project.title;
+    const authorName = project.author;
+    
+    // Get keys for all users with stored notification details
+    const projectAppName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ?? "minikit";
+    const keys = await redis.keys(`${projectAppName}:user:*`);
+    
+    console.log(`Found ${keys.length} users to notify about new project`);
+    
+    // Extract FIDs from keys
+    const fids = keys.map(key => {
+      const fid = key.split(':').pop();
+      return fid ? parseInt(fid, 10) : null;
+    }).filter(Boolean);
+    
+    if (fids.length === 0) {
+      console.log('No users to notify');
+      return;
+    }
+    
+    // Import here to avoid circular dependency
+    const { sendFrameNotification } = await import('./notification-client');
+    
+    // Send notifications to all users
+    const results = await Promise.allSettled(
+      fids.map(async (fid) => {
+        if (!fid) return null;
+        
+        return sendFrameNotification({
+          fid,
+          title: 'New project submitted 🚀',
+          body: `Check out ${projectName} by ${authorName}`
+        });
+      })
+    );
+    
+    const successful = results.filter(
+      r => r.status === 'fulfilled' && r.value?.state === 'success'
+    ).length;
+    
+    const failed = results.filter(
+      r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value?.state !== 'success')
+    ).length;
+    
+    console.log(`Project notification stats: Total: ${fids.length}, Success: ${successful}, Failed: ${failed}`);
+  } catch (error) {
+    console.error('Error sending project notifications:', error);
+    throw error;
   }
 }
 
