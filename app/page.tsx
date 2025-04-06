@@ -182,30 +182,16 @@ export default function App() {
     <div className="w-full max-w-[520px] mx-auto pb-8">
       <header className="mr-2 mt-1 flex justify-between items-center py-2">
         <div className="justify-start pl-1">
-          {address ? (
-            <div className="flex items-center gap-2">
-              <Identity
-                address={address}
-                className="!bg-inherit p-0 [&>div]:space-x-2"
-              >
-                <Name className="text-inherit" />
-              </Identity>
-            </div>
-          ) : (
-            <div className="pl-2 pt-1 text-gray-500 text-sm font-semibold">
-              NOT CONNECTED
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
           {address && (
             <Link
               href="/submit"
-              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
             >
               + Submit Project
             </Link>
           )}
+        </div>
+        <div className="flex items-center gap-2">
           <WalletButton />
           <div className="pr-1 justify-end flex items-center gap-2">
             {saveFrameButton}

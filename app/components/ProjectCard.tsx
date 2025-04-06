@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useOpenUrl } from "@coinbase/onchainkit/minikit";
+import { useOpenUrl, useViewProfile } from "@coinbase/onchainkit/minikit";
 import type { Project } from "@/lib/projects";
 import type { Address } from 'viem';
 import { useViews } from "./ViewContext";
@@ -23,40 +23,35 @@ export default function ProjectCard({
   onProjectDeleted
 }: ProjectCardProps) {
   const openUrl = useOpenUrl();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const viewProfile = useViewProfile();
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
-  const { hasViewedProject, trackProjectView } = useViews();
+  const [isProcessing, setIsProcessing] = useState(false);
   
+  const { hasViewedProject, trackProjectView } = useViews();
   const hasViewed = hasViewedProject(project.id);
   
-  // Check if user is admin
-  const isAdmin = !!userAddress && ADMIN_ADDRESSES.some(
-    addr => addr.toLowerCase() === userAddress.toLowerCase()
-  );
-
-  // Status indicator for pending projects (only shown to admins)
-  const isPendingApproval = isAdmin && !project.displayed;
+  // Check if user is admin to control admin features visibility
+  const isAdmin = userAddress ? ADMIN_ADDRESSES.some(
+    admin => admin.toLowerCase() === userAddress.toLowerCase()
+  ) : false;
+  
+  // Whether project is pending approval
+  const isPendingApproval = project.displayed === false;
   
   const handleProjectClick = async () => {
     if (!project.link) return;
     
-    if (userAddress && !hasViewed) {
-      setIsProcessing(true);
-      try {
-        // Track the view using our context
-        await trackProjectView(project.id);
-        // Then open URL
-        openUrl(project.link);
-      } catch (error) {
-        console.error("Failed to track project view:", error);
-        // Open URL anyway if tracking fails
-        openUrl(project.link);
-      } finally {
-        setIsProcessing(false);
-      }
-    } else {
-      // Just open URL if wallet not connected or already viewed
+    setIsProcessing(true);
+    
+    try {
+      // Track the view using our context
+      await trackProjectView(project.id);
+      // Then open URL
       openUrl(project.link);
+    } catch (error) {
+      console.error("Error processing project click:", error);
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -118,6 +113,12 @@ export default function ProjectCard({
     }
   };
   
+  const handleViewAuthorProfile = () => {
+    if (project.authorFid && project.authorFid > 0) {
+      viewProfile(project.authorFid);
+    }
+  };
+
   return (
     <div className={`p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow ${isPendingApproval ? 'border-yellow-400' : ''}`}>
       {isPendingApproval && (
@@ -130,9 +131,12 @@ export default function ProjectCard({
       <p className="text-sm text-gray-600 mb-2">
         By{' '}
         {project.authorFid && project.authorFid > 0 ? (
-          <span className="font-medium">
+          <button 
+            onClick={handleViewAuthorProfile}
+            className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+          >
             {project.author}
-          </span>
+          </button>
         ) : (
           <span>{project.author}</span>
         )}

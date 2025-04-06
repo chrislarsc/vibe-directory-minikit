@@ -60,7 +60,7 @@ export default function WalletButton() {
     return (
       <button
         onClick={handleDisconnectClick}
-        className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
       >
         <span className="hidden sm:inline">
           {`${address.slice(0, 6)}...${address.slice(-4)}`}
