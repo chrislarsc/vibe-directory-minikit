@@ -10,9 +10,21 @@ export async function GET() {
   try {
     const projects = await getAllProjects();
     
-    // Add cache control headers (5 minutes cache TTL for projects)
+    console.log("API: Returning projects:", projects.length);
+    console.log("API: Projects with prompts:", projects.filter(p => p.prompt).length);
+    
+    if (projects.length > 0) {
+      console.log("API: First project info:", {
+        id: projects[0].id,
+        title: projects[0].title,
+        hasPrompt: !!projects[0].prompt
+      });
+    }
+    
+    // Disable cache completely to ensure fresh data
     const response = NextResponse.json({ success: true, data: projects });
-    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');
+    response.headers.set('Cache-Control', 'no-store, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
     
     return response;
   } catch (error) {

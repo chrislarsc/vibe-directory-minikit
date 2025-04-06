@@ -5,6 +5,7 @@ import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import type { Project } from "@/lib/projects";
 import type { Address } from 'viem';
 import { useViews } from "./ViewContext";
+import PromptModal from "./PromptModal";
 
 interface FeaturedProjectCardProps {
   project: Project;
@@ -14,9 +15,17 @@ interface FeaturedProjectCardProps {
 export default function FeaturedProjectCard({ project, userAddress }: FeaturedProjectCardProps) {
   const openUrl = useOpenUrl();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
   const { hasViewedProject, trackProjectView } = useViews();
   
   const hasViewed = hasViewedProject(project.id);
+  
+  // Debug log
+  console.log(`FeaturedProjectCard for project ${project.id}:`, { 
+    title: project.title, 
+    hasPrompt: !!project.prompt,
+    promptLength: project.prompt?.length
+  });
   
   const handleProjectClick = async () => {
     if (!project.link) return;
@@ -60,21 +69,32 @@ export default function FeaturedProjectCard({ project, userAddress }: FeaturedPr
           <p className="mb-4 text-gray-800">{project.description}</p>
           
           <div className="flex items-center">
-            {project.link ? (
-              <button 
-                onClick={handleProjectClick}
-                disabled={isProcessing}
-                className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                  isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isProcessing ? 'Processing...' : 'Check out project'}
-              </button>
-            ) : (
-              <span className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg inline-block">
-                Coming soon
-              </span>
-            )}
+            <div className="flex space-x-2">
+              {project.link ? (
+                <button 
+                  onClick={handleProjectClick}
+                  disabled={isProcessing}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                    isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isProcessing ? 'Processing...' : 'Check out project'}
+                </button>
+              ) : (
+                <span className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg inline-block">
+                  Coming soon
+                </span>
+              )}
+              
+              {project.prompt && (
+                <button 
+                  onClick={() => setIsPromptModalOpen(true)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  See prompt
+                </button>
+              )}
+            </div>
             
             {userAddress && hasViewed && (
               <span className="ml-2 text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
@@ -84,6 +104,14 @@ export default function FeaturedProjectCard({ project, userAddress }: FeaturedPr
           </div>
         </div>
       </div>
+      
+      {project.prompt && (
+        <PromptModal
+          prompt={project.prompt}
+          isOpen={isPromptModalOpen}
+          onClose={() => setIsPromptModalOpen(false)}
+        />
+      )}
     </div>
   );
 } 

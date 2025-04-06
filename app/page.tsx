@@ -33,12 +33,22 @@ export default function App() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('/api/projects', {
-          // Add cache headers to control data freshness
-          cache: 'no-cache' // Use 'force-cache' for production with revalidation
+        // Add a timestamp to bust the cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/projects?t=${timestamp}`, {
+          cache: 'no-store', // Force fresh fetch every time
+          headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
         });
         const data = await response.json();
         if (data.success) {
+          console.log("Fetched projects:", data.data.length);
+          console.log("Projects with prompts:", data.data.filter((p: Project) => p.prompt).length);
+          if (data.data.length > 0) {
+            console.log("First project has prompt:", !!data.data[0].prompt);
+          }
           setProjects(data.data);
         } else {
           console.error('Failed to fetch projects:', data.error);

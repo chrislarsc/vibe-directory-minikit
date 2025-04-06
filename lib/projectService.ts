@@ -13,19 +13,22 @@ export async function initializeProjectsStore(): Promise<void> {
   }
 
   try {
-    // Clear any corrupted data
-    await redis.del(PROJECTS_KEY);
+    // Check if projects already exist in Redis
+    const existingProjects = await redis.get(PROJECTS_KEY);
     
-    // Stringify the projects array properly
-    const projectsJsonString = JSON.stringify(initialProjects);
-    console.log(`Initializing projects in Redis with ${initialProjects.length} projects`);
-    
-    // Store the stringified data
-    const success = await redis.set(PROJECTS_KEY, projectsJsonString);
-    if (success === 'OK') {
-      console.log('Projects initialized in Redis successfully');
+    // Only initialize if no projects exist
+    if (!existingProjects) {
+      console.log(`No existing projects found. Initializing Redis with ${initialProjects.length} projects`);
+      
+      // Store the data directly as an object
+      const success = await redis.set(PROJECTS_KEY, initialProjects);
+      if (success === 'OK') {
+        console.log('Projects initialized in Redis successfully');
+      } else {
+        console.error('Failed to initialize projects in Redis');
+      }
     } else {
-      console.error('Failed to initialize projects in Redis');
+      console.log('Projects already exist in Redis, skipping initialization');
     }
   } catch (error) {
     console.error('Error initializing projects in Redis:', error);
@@ -49,23 +52,41 @@ export async function getAllProjects(): Promise<Project[]> {
   }
 
   try {
-    const projectsJson = await redis.get<string>(PROJECTS_KEY);
+    const projectsData = await redis.get<string | Project[]>(PROJECTS_KEY);
     
-    if (!projectsJson) {
+    if (!projectsData) {
       console.log('No projects found in Redis, initializing...');
       await initializeProjectsStore();
       return [...initialProjects];
     }
     
-    try {
-      // Try to parse the JSON
-      return JSON.parse(projectsJson) as Project[];
-    } catch (parseError) {
-      console.error('Error parsing projects from Redis:', parseError);
-      // If we can't parse the JSON, reinitialize and return defaults
+    // Handle different types of responses from Redis
+    let projects: Project[];
+    
+    if (typeof projectsData === 'string') {
+      try {
+        // Try to parse the JSON string
+        projects = JSON.parse(projectsData) as Project[];
+      } catch (parseError) {
+        console.error('Error parsing projects from Redis:', parseError);
+        // If we can't parse the JSON, reinitialize and return defaults
+        await initializeProjectsStore();
+        return [...initialProjects];
+      }
+    } else if (typeof projectsData === 'object' && Array.isArray(projectsData)) {
+      // If Redis returned the data already as an array
+      projects = projectsData;
+    } else {
+      console.error('Unexpected Redis data format:', typeof projectsData);
       await initializeProjectsStore();
       return [...initialProjects];
     }
+    
+    // Debug: Check if any projects have a prompt field
+    const hasPromptsCount = projects.filter(p => p.prompt).length;
+    console.log(`Returning ${projects.length} projects, ${hasPromptsCount} with prompts`);
+    
+    return projects;
   } catch (error) {
     console.error('Error fetching projects from Redis:', error);
     return [...initialProjects]; // Fallback to initial projects on error
@@ -101,9 +122,8 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
     // Add new project at the beginning of the array
     const updatedProjects = [newProject, ...projects];
     
-    // Save back to Redis - ensure proper serialization
-    const projectsJson = JSON.stringify(updatedProjects);
-    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    // Save back to Redis as objects directly
+    const success = await redis.set(PROJECTS_KEY, updatedProjects);
     
     if (success !== 'OK') {
       throw new Error('Redis SET operation failed');
@@ -140,9 +160,8 @@ export async function updateProject(id: string, projectData: Partial<Project>): 
     
     projects[index] = updatedProject;
     
-    // Save back to Redis - ensure proper serialization
-    const projectsJson = JSON.stringify(projects);
-    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    // Save back to Redis as objects directly
+    const success = await redis.set(PROJECTS_KEY, projects);
     
     if (success !== 'OK') {
       throw new Error('Redis SET operation failed');
@@ -172,9 +191,8 @@ export async function deleteProject(id: string): Promise<boolean> {
       return false; // No project was deleted
     }
     
-    // Save back to Redis - ensure proper serialization
-    const projectsJson = JSON.stringify(filteredProjects);
-    const success = await redis.set(PROJECTS_KEY, projectsJson);
+    // Save back to Redis as objects directly
+    const success = await redis.set(PROJECTS_KEY, filteredProjects);
     
     if (success !== 'OK') {
       throw new Error('Redis SET operation failed');
