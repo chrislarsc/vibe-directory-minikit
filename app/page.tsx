@@ -23,6 +23,7 @@ export default function App() {
   const [frameAdded, setFrameAdded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
@@ -32,6 +33,7 @@ export default function App() {
   // Load projects
   useEffect(() => {
     const fetchProjects = async () => {
+      setIsLoading(true);
       try {
         // Add a timestamp to bust the cache
         const timestamp = new Date().getTime();
@@ -53,6 +55,8 @@ export default function App() {
         }
       } catch (error) {
         console.error('Error fetching projects:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -63,6 +67,7 @@ export default function App() {
   const handleProjectsChanged = () => {
     // Refetch projects
     const fetchProjects = async () => {
+      setIsLoading(true);
       try {
         const timestamp = new Date().getTime();
         const showAll = isAdmin ? 'true' : 'false';
@@ -82,6 +87,8 @@ export default function App() {
         }
       } catch (error) {
         console.error('Error refreshing projects:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -190,6 +197,7 @@ export default function App() {
             projects={projects} 
             userAddress={address}
             onProjectsChanged={handleProjectsChanged}
+            isLoading={isLoading}
           />
         </ViewProvider>
       </main>

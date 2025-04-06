@@ -5,7 +5,7 @@ import redis from './redis';
 // Redis key for projects
 const PROJECTS_KEY = 'vibe-directory:projects';
 
-// Initialize the Redis store with initial projects if it doesn't exist yet
+// Initialize the Redis store if needed
 export async function initializeProjectsStore(): Promise<void> {
   if (!redis) {
     console.warn('Redis not available, projects will be stored in memory only');
@@ -18,20 +18,20 @@ export async function initializeProjectsStore(): Promise<void> {
     
     // Only initialize if no projects exist
     if (!existingProjects) {
-      console.log(`No existing projects found. Initializing Redis with ${initialProjects.length} projects`);
+      console.log('No existing projects found in Redis');
       
-      // Store the data
-      const success = await redis.set(PROJECTS_KEY, initialProjects);
+      // Initialize with empty array
+      const success = await redis.set(PROJECTS_KEY, []);
       if (success === 'OK') {
-        console.log('Projects initialized in Redis successfully');
+        console.log('Redis initialized with empty projects array');
       } else {
-        console.error('Failed to initialize projects in Redis');
+        console.error('Failed to initialize Redis');
       }
     } else {
       console.log('Projects already exist in Redis, skipping initialization');
     }
   } catch (error) {
-    console.error('Error initializing projects in Redis:', error);
+    console.error('Error initializing Redis:', error);
   }
 }
 
@@ -48,21 +48,16 @@ if (typeof window === 'undefined') {
  */
 export async function getAllProjects(showAll: boolean = false): Promise<Project[]> {
   if (!redis) {
-    console.warn('Redis not available, returning initial projects');
-    return showAll 
-      ? [...initialProjects]
-      : [...initialProjects].filter(p => p.displayed !== false);
+    console.warn('Redis not available, returning empty projects array');
+    return [];
   }
 
   try {
     const projectsData = await redis.get<string | Project[]>(PROJECTS_KEY);
     
     if (!projectsData) {
-      console.log('No projects found in Redis, initializing...');
-      await initializeProjectsStore();
-      return showAll 
-        ? [...initialProjects]
-        : [...initialProjects].filter(p => p.displayed !== false);
+      console.log('No projects found in Redis');
+      return [];
     }
     
     // Handle different types of responses from Redis
@@ -75,11 +70,7 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
         console.log('Successfully parsed projects from Redis string');
       } catch (parseError) {
         console.error('Error parsing projects from Redis:', parseError);
-        // If we can't parse the JSON, reinitialize and return defaults
-        await initializeProjectsStore();
-        return showAll 
-          ? [...initialProjects]
-          : [...initialProjects].filter(p => p.displayed !== false);
+        return [];
       }
     } else if (typeof projectsData === 'object' && Array.isArray(projectsData)) {
       // If Redis returned the data already as an array
@@ -87,19 +78,13 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
       console.log('Retrieved projects as array from Redis');
     } else {
       console.error('Unexpected Redis data format:', typeof projectsData);
-      await initializeProjectsStore();
-      return showAll 
-        ? [...initialProjects]
-        : [...initialProjects].filter(p => p.displayed !== false);
+      return [];
     }
     
     // Check if any projects exist in the array
     if (!projects || projects.length === 0) {
-      console.log('No valid projects array found in Redis, reinitializing...');
-      await initializeProjectsStore();
-      return showAll
-        ? [...initialProjects]
-        : [...initialProjects].filter(p => p.displayed !== false);
+      console.log('No valid projects array found in Redis');
+      return [];
     }
     
     // Debug: Check if any projects have a prompt field
@@ -110,9 +95,7 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
     return showAll ? projects : projects.filter(p => p.displayed !== false);
   } catch (error) {
     console.error('Error fetching projects from Redis:', error);
-    return showAll 
-      ? [...initialProjects]
-      : [...initialProjects].filter(p => p.displayed !== false);
+    return [];
   }
 }
 
