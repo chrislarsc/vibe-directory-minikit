@@ -12,9 +12,9 @@ import { useAccount } from "wagmi";
 import Check from "./svg/Check";
 import ProjectList from "./components/ProjectList";
 import WalletButton from "./components/WalletButton";
-import AttestationTracker from "./components/AttestationTracker";
+import ViewTracker from "./components/ViewTracker";
+import { ViewProvider } from "./components/ViewContext";
 import { ADMIN_ADDRESSES } from "@/lib/constants";
-import { getAllProjects } from "@/lib/projectService";
 import type { Project } from "@/lib/projects";
 import Link from "next/link";
 
@@ -23,7 +23,6 @@ export default function App() {
   const [frameAdded, setFrameAdded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [notificationSent, setNotificationSent] = useState(false);
 
   const addFrame = useAddFrame();
   const openUrl = useOpenUrl();
@@ -32,7 +31,24 @@ export default function App() {
 
   // Load projects
   useEffect(() => {
-    setProjects(getAllProjects());
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects', {
+          // Add cache headers to control data freshness
+          cache: 'no-cache' // Use 'force-cache' for production with revalidation
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProjects(data.data);
+        } else {
+          console.error('Failed to fetch projects:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -73,7 +89,7 @@ export default function App() {
             }),
           });
           
-          // Send a test notification
+          // Send a welcome notification
           await sendNotification({
             title: 'Welcome to Vibe Directory! 👋',
             body: 'You will now receive notifications when new vibe projects are added.'
@@ -84,20 +100,6 @@ export default function App() {
       console.error('Failed to add frame:', error);
     }
   }, [addFrame, address, sendNotification]);
-
-  const handleSendTestNotification = async () => {
-    try {
-      setNotificationSent(true);
-      await sendNotification({
-        title: 'Test Notification 🚀',
-        body: 'This is a test notification from the Vibe Directory!'
-      });
-      setTimeout(() => setNotificationSent(false), 5000);
-    } catch (error) {
-      console.error('Failed to send notification:', error);
-      setNotificationSent(false);
-    }
-  };
 
   const saveFrameButton = useMemo(() => {
     if (context && !context.client.added) {
@@ -155,24 +157,16 @@ export default function App() {
         <div className="flex items-center gap-2">
           <WalletButton />
           <div className="pr-1 justify-end flex items-center gap-2">
-            {context?.client.added && (
-              <button
-                type="button"
-                onClick={handleSendTestNotification}
-                disabled={notificationSent}
-                className="cursor-pointer bg-transparent font-semibold text-sm disabled:opacity-50"
-              >
-                {notificationSent ? "SENT!" : "TEST NOTIFICATION"}
-              </button>
-            )}
             {saveFrameButton}
           </div>
         </div>
       </header>
 
       <main className="px-4">
-        {address && <AttestationTracker address={address} />}
-        <ProjectList projects={projects} userAddress={address} />
+        <ViewProvider userAddress={address}>
+          {address && <ViewTracker />}
+          <ProjectList projects={projects} userAddress={address} />
+        </ViewProvider>
       </main>
 
       <footer className="flex items-center w-full justify-center mt-8">

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import type { Project } from "@/lib/projects";
-import { createAttestationForProjectView, hasUserViewedProject } from "@/lib/attestationClient";
 import type { Address } from 'viem';
+import { useViews } from "./ViewContext";
 
 interface FeaturedProjectCardProps {
   project: Project;
@@ -13,40 +13,30 @@ interface FeaturedProjectCardProps {
 
 export default function FeaturedProjectCard({ project, userAddress }: FeaturedProjectCardProps) {
   const openUrl = useOpenUrl();
-  const [isCreatingAttestation, setIsCreatingAttestation] = useState(false);
-  const [hasViewed, setHasViewed] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { hasViewedProject, trackProjectView } = useViews();
   
-  // Check if user has viewed this project when component mounts or address changes
-  useEffect(() => {
-    if (userAddress) {
-      hasUserViewedProject(userAddress, project.id)
-        .then(viewed => {
-          setHasViewed(viewed);
-        })
-        .catch(err => console.error('Error checking project view status:', err));
-    }
-  }, [userAddress, project.id]);
+  const hasViewed = hasViewedProject(project.id);
   
   const handleProjectClick = async () => {
     if (!project.link) return;
     
-    if (userAddress) {
-      setIsCreatingAttestation(true);
+    if (userAddress && !hasViewed) {
+      setIsProcessing(true);
       try {
-        // Create attestation first
-        await createAttestationForProjectView(userAddress, project.id);
-        setHasViewed(true);
+        // Track the view using our context
+        await trackProjectView(project.id);
         // Then open URL
         openUrl(project.link);
       } catch (error) {
-        console.error("Failed to create attestation:", error);
-        // Open URL anyway if attestation fails
+        console.error("Failed to track project view:", error);
+        // Open URL anyway if tracking fails
         openUrl(project.link);
       } finally {
-        setIsCreatingAttestation(false);
+        setIsProcessing(false);
       }
     } else {
-      // Just open URL if wallet not connected
+      // Just open URL if wallet not connected or already viewed
       openUrl(project.link);
     }
   };
@@ -73,12 +63,12 @@ export default function FeaturedProjectCard({ project, userAddress }: FeaturedPr
             {project.link ? (
               <button 
                 onClick={handleProjectClick}
-                disabled={isCreatingAttestation}
+                disabled={isProcessing}
                 className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                  isCreatingAttestation ? 'opacity-50 cursor-not-allowed' : ''
+                  isProcessing ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isCreatingAttestation ? 'Processing...' : 'Check out project'}
+                {isProcessing ? 'Processing...' : 'Check out project'}
               </button>
             ) : (
               <span className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg inline-block">
