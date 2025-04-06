@@ -64,6 +64,8 @@ export default function ProjectCard({
     if (!isAdmin || !userAddress) return;
     
     try {
+      console.log(`Updating project with ID: ${project.id}`, updatedFields);
+      
       const response = await fetch(`/api/projects/${project.id}`, {
         method: 'PATCH',
         headers: {
@@ -78,14 +80,17 @@ export default function ProjectCard({
       const data = await response.json();
       
       if (!data.success) {
+        console.error(`Update failed for project ${project.id}:`, data.error);
         throw new Error(data.error || 'Failed to update project');
       }
+      
+      console.log(`Successfully updated project ${project.id}`);
       
       if (onProjectUpdated) {
         onProjectUpdated();
       }
     } catch (error) {
-      console.error('Error updating project:', error);
+      console.error(`Error updating project ${project.id}:`, error);
       throw error;
     }
   };
@@ -122,7 +127,16 @@ export default function ProjectCard({
       )}
       
       <h2 className="text-xl font-bold">{project.title}</h2>
-      <p className="text-sm text-gray-600 mb-2">By {project.author}</p>
+      <p className="text-sm text-gray-600 mb-2">
+        By{' '}
+        {project.authorFid && project.authorFid > 0 ? (
+          <span className="font-medium">
+            {project.author}
+          </span>
+        ) : (
+          <span>{project.author}</span>
+        )}
+      </p>
       <p className="mb-4 text-gray-800">{project.description}</p>
       
       <div className="flex items-center justify-between">

@@ -118,9 +118,12 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
 
 /**
  * Get a project by ID
+ * @param id Project ID to retrieve
+ * @param isAdmin If true, includes non-displayed projects in the search
  */
-export async function getProjectById(id: string): Promise<Project | undefined> {
-  const projects = await getAllProjects();
+export async function getProjectById(id: string, isAdmin: boolean = false): Promise<Project | undefined> {
+  // Only get all projects (including non-displayed) if the caller is an admin
+  const projects = await getAllProjects(isAdmin);
   return projects.find(project => project.id === id);
 }
 

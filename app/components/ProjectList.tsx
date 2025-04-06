@@ -24,12 +24,16 @@ export default function ProjectList({ projects, userAddress, onProjectsChanged }
   const regularProjects = displayedProjects.filter(p => !p.featured);
   
   const handleProjectUpdated = () => {
+    console.log("Project updated, triggering refresh...");
+    // Notify parent component to refresh projects
     if (onProjectsChanged) {
       onProjectsChanged();
     }
   };
   
   const handleProjectDeleted = () => {
+    console.log("Project deleted, triggering refresh...");
+    // Notify parent component to refresh projects
     if (onProjectsChanged) {
       onProjectsChanged();
     }

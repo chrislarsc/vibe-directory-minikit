@@ -55,65 +55,64 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const requestBody = await request.json();
-    const { project, authorAddress, adminAddress } = requestBody;
-    
-    // Check if it's an admin submission or regular user submission
-    const isAdmin = adminAddress && ADMIN_ADDRESSES.some(addr => 
-      addr.toLowerCase() === adminAddress.toLowerCase()
-    );
-    
+    // Extract project data from request body
+    const body = await request.json();
+    const { project, authorAddress } = body;
+
+    console.log('===== API DEBUG: Received project submission:', {
+      projectTitle: project.title,
+      authorInPayload: project.author,
+      authorFidInPayload: project.authorFid,
+      authorAddressInPayload: project.authorAddress,
+      clientAuthorAddress: authorAddress
+    }, '=====');
+
     // Validate project data
-    if (!project || !project.title || !project.description || !project.link || !(authorAddress || project.author)) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required project fields' },
-        { status: 400 }
-      );
+    if (!project || !project.title || !project.description || !project.link) {
+      console.error('===== API DEBUG: Invalid project data (missing required fields) =====');
+      return NextResponse.json({ success: false, error: 'Invalid project data' }, { status: 400 });
     }
-    
-    // Verify the submitted author matches the connected wallet
-    if (!authorAddress || authorAddress !== project.authorAddress) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized project submission' },
-        { status: 401 }
-      );
+
+    // Validate author information
+    if (!project.author || !project.authorAddress) {
+      console.error('===== API DEBUG: Missing author information =====');
+      return NextResponse.json({ success: false, error: 'Author information is required' }, { status: 400 });
     }
-    
-    // Log project submission details with Farcaster information
-    console.log(`Submitting new project: "${project.title}" by ${project.author}`, {
-      farcasterFid: project.authorFid || 'Not available',
-      walletAddress: project.authorAddress,
-      isAdmin
-    });
-    
-    // Add creation timestamp if not provided
-    if (!project.createdAt) {
-      project.createdAt = new Date().toISOString();
+
+    // Verify the authorAddress matches the one from the client
+    if (project.authorAddress !== authorAddress) {
+      console.error('===== API DEBUG: Author address mismatch:', { 
+        payloadAddress: project.authorAddress, 
+        clientAddress: authorAddress 
+      }, '=====');
+      return NextResponse.json({ success: false, error: 'Invalid author' }, { status: 403 });
     }
-    
-    // For regular user submissions, ensure displayed is set to false to require moderation
-    if (!isAdmin && project.displayed !== false) {
-      project.displayed = false;
+
+    // Save project to database using the Redis-based service
+    try {
+      console.log('===== API DEBUG: Storing project with author:', project.author, '=====');
+      console.log('===== API DEBUG: Storing project with authorFid:', project.authorFid, '=====');
+      
+      // Add project to Redis using the existing service function
+      const newProject = await addProject(project);
+      
+      console.log('===== API DEBUG: Project saved successfully:', { 
+        id: newProject.id,
+        author: newProject.author,
+        authorFid: newProject.authorFid
+      }, '=====');
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Project submitted successfully',
+        projectId: newProject.id
+      });
+    } catch (dbError) {
+      console.error('===== API DEBUG: Database error:', dbError, '=====');
+      return NextResponse.json({ success: false, error: 'Failed to save project' }, { status: 500 });
     }
-    
-    // Add the project to the database
-    const newProject = await addProject(project as Omit<Project, 'id'>);
-    
-    // Return success without cache (since this is a mutation)
-    const response = NextResponse.json({ 
-      success: true, 
-      data: newProject
-    });
-    
-    // No caching for POST responses
-    response.headers.set('Cache-Control', 'no-store, max-age=0');
-    
-    return response;
   } catch (error) {
-    console.error('Error adding project:', error);
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    console.error('===== API DEBUG: Server error:', error, '=====');
+    return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   }
 } 

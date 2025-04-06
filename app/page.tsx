@@ -66,11 +66,15 @@ export default function App() {
 
   // Handler for when projects are updated by admin actions
   const handleProjectsChanged = () => {
+    console.log("Project changed, refreshing project list...");
+    
     // Refetch projects
     const fetchProjects = async () => {
       try {
         const timestamp = new Date().getTime();
         const showAll = isAdmin ? 'true' : 'false';
+        
+        console.log(`Fetching projects with showAll=${showAll}, admin=${isAdmin}`);
         
         const response = await fetch(`/api/projects?t=${timestamp}&showAll=${showAll}&adminAddress=${address || ''}`, {
           cache: 'no-store',
@@ -81,7 +85,10 @@ export default function App() {
         });
         const data = await response.json();
         if (data.success) {
+          console.log(`Refreshed projects: ${data.data.length} total`);
           setProjects(data.data);
+        } else {
+          console.error('Failed to refresh projects:', data.error);
         }
       } catch (error) {
         console.error('Error refreshing projects:', error);
@@ -178,15 +185,6 @@ export default function App() {
               >
                 <Name className="text-inherit" />
               </Identity>
-              
-              {isAdmin && (
-                <Link 
-                  href="/admin" 
-                  className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full"
-                >
-                  Admin
-                </Link>
-              )}
             </div>
           ) : (
             <div className="pl-2 pt-1 text-gray-500 text-sm font-semibold">

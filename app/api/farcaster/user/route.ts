@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getFarcasterUserByFid, getFarcasterUserByAddress } from '@/lib/neynarApi';
 
 // Get API key from environment variable
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY;
@@ -12,61 +13,91 @@ interface FarcasterUser {
   [key: string]: unknown;
 }
 
+/**
+ * GET handler to retrieve Farcaster user data by FID or address
+ */
 export async function GET(request: Request) {
-  // Check if API key is configured
-  if (!NEYNAR_API_KEY) {
-    console.error('NEYNAR_API_KEY environment variable is not set');
-    return NextResponse.json(
-      { success: false, error: 'Farcaster API is not configured properly' },
-      { status: 500 }
-    );
-  }
-
-  const { searchParams } = new URL(request.url);
-  const address = searchParams.get('address');
-  
-  if (!address) {
-    return NextResponse.json(
-      { success: false, error: 'Address parameter is required' },
-      { status: 400 }
-    );
-  }
-
   try {
-    // Use a more comprehensive approach to find users by address
-    const matchingUsers = await fetchUsersByVerifiedAddress(address);
-    
-    if (!matchingUsers || matchingUsers.length === 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No Farcaster user found for this address' 
-      });
+    // Check if API key is configured
+    if (!NEYNAR_API_KEY) {
+      console.error('NEYNAR_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { success: false, error: 'Farcaster API is not configured properly' },
+        { status: 500 }
+      );
     }
 
-    // Return the first matching user
-    const user = matchingUsers[0];
+    const { searchParams } = new URL(request.url);
+    const fidParam = searchParams.get('fid');
+    const address = searchParams.get('address');
+
+    // Handle lookup by FID
+    if (fidParam) {
+      const fid = parseInt(fidParam, 10);
+      
+      if (isNaN(fid) || fid <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid FID parameter' },
+          { status: 400 }
+        );
+      }
+      
+      const userData = await getFarcasterUserByFid(fid);
+      
+      if (!userData) {
+        return NextResponse.json(
+          { success: false, error: 'Farcaster user not found' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json({
+        success: true,
+        data: userData
+      });
+    }
     
-    // For logging/debugging
-    console.log("Found Farcaster user:", {
-      fid: user.fid,
-      username: user.username,
-      displayName: user.display_name,
-    });
+    // Handle lookup by address
+    else if (address) {
+      console.log(`===== API DEBUG: Looking up Farcaster user for address: ${address} =====`);
+      
+      const userData = await getFarcasterUserByAddress(address);
+      
+      if (!userData) {
+        console.log(`===== API DEBUG: No Farcaster user data returned for address ${address} =====`);
+        return NextResponse.json({ 
+          success: false, 
+          error: 'No Farcaster user found for this address' 
+        });
+      }
+      
+      // For logging/debugging
+      console.log("===== API DEBUG: Found Farcaster user by address:", {
+        fid: userData.fid,
+        username: userData.username,
+        displayName: userData.displayName,
+      }, "=====");
+      
+      return NextResponse.json({
+        success: true,
+        fid: userData.fid,
+        username: userData.username,
+        displayName: userData.displayName,
+        profileImage: userData.pfpUrl
+      });
+    } 
     
-    return NextResponse.json({
-      success: true,
-      fid: user.fid,
-      username: user.username,
-      displayName: user.display_name,
-      profileImage: user.pfp_url
-    });
+    // Neither FID nor address provided
+    else {
+      return NextResponse.json(
+        { success: false, error: 'Either fid or address parameter is required' },
+        { status: 400 }
+      );
+    }
   } catch (error) {
     console.error('Error fetching Farcaster user:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error fetching Farcaster user' 
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -85,19 +116,21 @@ async function fetchUsersByVerifiedAddress(address: string): Promise<FarcasterUs
       method: 'GET',
       headers: {
         'accept': 'application/json',
-        'x-api-key': NEYNAR_API_KEY!
+        'api_key': NEYNAR_API_KEY!
       }
     });
     
     if (!response.ok) {
-      throw new Error(`Neynar API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`Neynar API error (${response.status}): ${errorText}`);
+      return [];
     }
     
     const data = await response.json();
     return data.users || [];
   } catch (error) {
     console.error('Error in fetchUsersByVerifiedAddress:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -112,7 +145,7 @@ async function fetchUsersByFid(fid: string): Promise<FarcasterUser[]> {
     method: 'GET',
     headers: {
       'accept': 'application/json',
-      'x-api-key': NEYNAR_API_KEY!
+      'api_key': NEYNAR_API_KEY!
     }
   });
   
@@ -122,4 +155,4 @@ async function fetchUsersByFid(fid: string): Promise<FarcasterUser[]> {
   
   const data = await response.json();
   return data.users || [];
-} 
+}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, FormEvent } from "react";
+import { useState, useRef, FormEvent, useEffect } from "react";
 import type { Address } from 'viem';
 import { Identity } from "@coinbase/onchainkit/identity";
+import { getFarcasterUserByFid } from "@/lib/neynarApi";
 
 interface ProjectSubmitFormProps {
   userAddress: Address;
@@ -20,7 +21,38 @@ export default function ProjectSubmitForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [farcasterProfile, setFarcasterProfile] = useState<{ username: string; displayName: string; pfpUrl: string } | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Fetch Farcaster profile when FID is provided
+  useEffect(() => {
+    async function fetchFarcasterProfile() {
+      if (!userFid) return;
+      
+      setIsLoadingProfile(true);
+      console.log(`===== FORM DEBUG: Fetching Farcaster profile for FID: ${userFid} =====`);
+      
+      try {
+        const profileData = await getFarcasterUserByFid(userFid);
+        if (profileData?.success) {
+          setFarcasterProfile({
+            username: profileData.username,
+            displayName: profileData.displayName,
+            pfpUrl: profileData.pfpUrl
+          });
+          console.log('===== FORM DEBUG: Farcaster profile loaded:', profileData, '=====');
+          console.log(`===== FORM DEBUG: Will use "${profileData.displayName}" (${profileData.username}) as author =====`);
+        }
+      } catch (err) {
+        console.error('===== FORM DEBUG: Error fetching Farcaster profile:', err, '=====');
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    }
+    
+    fetchFarcasterProfile();
+  }, [userFid]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,18 +75,36 @@ export default function ProjectSubmitForm({
     }
     
     try {
-      // Prepare the project data with proper author information
-      const authorInfo = {
-        // Use Farcaster username if available, fallback to address
-        author: userName || userAddress, 
-        // Include FID if available (required field in Project type)
-        authorFid: userFid || 0, // Use 0 or another sentinel value when FID is not available
-        // Always include the wallet address for verification
-        authorAddress: userAddress
-      };
+      // Determine the best author name to use (string)
+      const authorName = farcasterProfile?.displayName || 
+                         farcasterProfile?.username || 
+                         userName || 
+                         String(userAddress);
       
-      // Log the author information being submitted
-      console.log('Submitting project with author details:', authorInfo);
+      // For debugging, log the project data before submission
+      console.log('===== SUBMIT DEBUG: Form data being submitted:', {
+        title, description, link, prompt, image,
+        author: authorName,
+        authorFid: userFid || 0,
+        authorAddress: userAddress,
+      }, '=====');
+      
+      console.log(`===== SUBMIT DEBUG: USING AUTHOR: "${authorName}" =====`);
+      console.log(`===== SUBMIT DEBUG: USING FARCASTER FID: ${userFid || 0} =====`);
+      
+      // Prepare the project data
+      const projectData = {
+        title,
+        description,
+        link,
+        prompt,
+        image,
+        author: authorName,
+        authorFid: userFid || 0,
+        authorAddress: userAddress,
+        displayed: false, // Projects require admin approval
+        createdAt: new Date().toISOString(),
+      };
       
       // Submit to API
       const response = await fetch('/api/projects', {
@@ -63,26 +113,24 @@ export default function ProjectSubmitForm({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          project: {
-            title,
-            description,
-            link,
-            prompt,
-            image,
-            ...authorInfo,
-            displayed: false, // Projects require admin approval
-            createdAt: new Date().toISOString(),
-          },
-          // Include userAddress for verification
+          project: projectData,
           authorAddress: userAddress,
         }),
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`===== SUBMIT DEBUG: Server error (${response.status}): ${errorText} =====`);
+        throw new Error(`Server error: ${response.status}`);
+      }
       
       const data = await response.json();
       
       if (!data.success) {
         throw new Error(data.error || 'Failed to submit project');
       }
+      
+      console.log(`===== SUBMIT DEBUG: Project successfully submitted with author "${projectData.author}" =====`);
       
       // Show success state
       setSuccess(true);
@@ -96,6 +144,7 @@ export default function ProjectSubmitForm({
         onSuccess();
       }
     } catch (err) {
+      console.error('===== SUBMIT DEBUG: Project submission error:', err, '=====');
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsSubmitting(false);
@@ -106,14 +155,20 @@ export default function ProjectSubmitForm({
     <div className="bg-white rounded-lg shadow-md p-6 max-w-xl mx-auto">
       <div className="mb-6 p-4 bg-blue-50 rounded-lg">
         <p className="text-sm text-gray-600">
-          Submitting as: {userName ? (
+          Submitting as: {farcasterProfile ? (
+            <span className="font-medium text-blue-600">{farcasterProfile.displayName} (@{farcasterProfile.username})</span>
+          ) : userName ? (
             <span className="font-medium text-blue-600">{userName}</span>
           ) : (
             <Identity address={userAddress} className="inline-flex">
               <span className="font-medium">{userAddress}</span>
             </Identity>
           )}
-          {userFid ? <span className="ml-1 text-xs text-blue-500">(Farcaster verified)</span> : null}
+          {userFid ? (
+            isLoadingProfile ? (
+              <span className="ml-1 text-xs text-blue-500">(Loading Farcaster profile...)</span>
+            ) : null
+          ) : null}
         </p>
         <p className="text-xs text-gray-500 mt-1">
           Your submission will be reviewed before being displayed publicly.
@@ -191,7 +246,7 @@ export default function ProjectSubmitForm({
               name="prompt"
               rows={5}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="If you used an AI prompt to create this project, paste it here"
+              placeholder="Share your initial prompt to help others learn how to vibe code, too"
             ></textarea>
           </div>
           

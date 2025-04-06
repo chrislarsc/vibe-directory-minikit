@@ -7,7 +7,6 @@ import type { Address } from 'viem';
 import { useViews } from "./ViewContext";
 import PromptModal from "./PromptModal";
 import AdminControls from "./AdminControls";
-import { updateProject, deleteProject } from "@/lib/projectService";
 import { ADMIN_ADDRESSES } from "@/lib/constants";
 
 interface FeaturedProjectCardProps {
@@ -71,20 +70,63 @@ export default function FeaturedProjectCard({
   const handleUpdateProject = async (updatedFields: Partial<Project>) => {
     if (!isAdmin || !userAddress) return;
     
-    const updated = await updateProject(project.id, updatedFields, userAddress);
-    
-    if (updated && onProjectUpdated) {
-      onProjectUpdated();
+    try {
+      console.log(`Updating featured project with ID: ${project.id}`, updatedFields);
+      
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          adminAddress: userAddress,
+          project: updatedFields
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error(`Update failed for featured project ${project.id}:`, data.error);
+        throw new Error(data.error || 'Failed to update project');
+      }
+      
+      console.log(`Successfully updated featured project ${project.id}`);
+      
+      if (onProjectUpdated) {
+        onProjectUpdated();
+      }
+    } catch (error) {
+      console.error(`Error updating featured project ${project.id}:`, error);
+      throw error;
     }
   };
   
   const handleDeleteProject = async () => {
     if (!isAdmin || !userAddress) return;
     
-    const deleted = await deleteProject(project.id, userAddress);
-    
-    if (deleted && onProjectDeleted) {
-      onProjectDeleted();
+    try {
+      console.log(`Deleting featured project with ID: ${project.id}`);
+      
+      const response = await fetch(`/api/projects/${project.id}?adminAddress=${userAddress}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error(`Delete failed for featured project ${project.id}:`, data.error);
+        throw new Error(data.error || 'Failed to delete project');
+      }
+      
+      console.log(`Successfully deleted featured project ${project.id}`);
+      
+      if (onProjectDeleted) {
+        onProjectDeleted();
+      }
+    } catch (error) {
+      console.error(`Error deleting featured project ${project.id}:`, error);
+      throw error;
     }
   };
   
@@ -109,7 +151,16 @@ export default function FeaturedProjectCard({
         )}
         <div className={project.image ? "md:w-2/3" : "w-full"}>
           <h2 className="text-xl font-bold">{project.title}</h2>
-          <p className="text-sm text-gray-600 mb-2">By {project.author}</p>
+          <p className="text-sm text-gray-600 mb-2">
+            By{' '}
+            {project.authorFid && project.authorFid > 0 ? (
+              <span className="font-medium">
+                {project.author}
+              </span>
+            ) : (
+              <span>{project.author}</span>
+            )}
+          </p>
           <p className="mb-4 text-gray-800">{project.description}</p>
           
           <div className="flex items-center">

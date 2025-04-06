@@ -12,6 +12,7 @@ export default function SubmitPage() {
   const { setFrameReady, isFrameReady } = useMiniKit();
   const [userName, setUserName] = useState<string | null>(null);
   const [userFid, setUserFid] = useState<number | undefined>(undefined);
+  const [farcasterStatus, setFarcasterStatus] = useState<string>('Not checked');
   
   // Set frame ready when component loads
   useEffect(() => {
@@ -23,35 +24,57 @@ export default function SubmitPage() {
   // Try to get the user's Farcaster FID and username
   useEffect(() => {
     if (address) {
-      console.log(`Attempting to fetch Farcaster info for address: ${address}`);
+      setFarcasterStatus('Checking Farcaster...');
+      console.log(`===== FARCASTER DEBUG: Fetching info for wallet address: ${address} =====`);
       
       const fetchUserInfo = async () => {
         try {
           // Call our Farcaster user API endpoint
-          const response = await fetch(`/api/farcaster/user?address=${address}`);
+          const apiUrl = `/api/farcaster/user?address=${address}`;
+          console.log(`===== FARCASTER DEBUG: Calling API endpoint: ${apiUrl} =====`);
+          
+          const response = await fetch(apiUrl);
+          console.log(`===== FARCASTER DEBUG: API response status: ${response.status} =====`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`===== FARCASTER DEBUG: API error (${response.status}): ${errorText} =====`);
+            setFarcasterStatus(`API error: ${response.status}`);
+            setUserName(null);
+            setUserFid(undefined);
+            return;
+          }
+          
           const data = await response.json();
           
-          console.log('Farcaster API response:', data);
+          console.log('===== FARCASTER DEBUG: API response:', data, '=====');
           
           if (data.success) {
             setUserFid(data.fid);
             // Prioritize username, then displayName
             const farcasterName = data.username || data.displayName || null;
             setUserName(farcasterName);
-            console.log(`Found Farcaster user: ${farcasterName} (FID: ${data.fid})`);
+            setFarcasterStatus(`Found: ${farcasterName} (FID: ${data.fid})`);
+            console.log(`===== FARCASTER DEBUG: Username found! "${farcasterName}" (FID: ${data.fid}) =====`);
+            // Log so we can verify in server logs what username will be used
+            console.log(`===== FARCASTER USERNAME FOR AUTHOR FIELD: "${farcasterName}" =====`);
           } else {
-            console.log('No Farcaster account found for this address');
+            console.log('===== FARCASTER DEBUG: No Farcaster account found for this address =====');
             setUserName(null);
             setUserFid(undefined);
+            setFarcasterStatus('No Farcaster account found');
           }
         } catch (error) {
-          console.error("Failed to fetch user info:", error);
+          console.error("===== FARCASTER DEBUG: Error fetching user info:", error, "=====");
           setUserName(null);
           setUserFid(undefined);
+          setFarcasterStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       };
       
       fetchUserInfo();
+    } else {
+      setFarcasterStatus('Wallet not connected');
     }
   }, [address]);
   
@@ -82,15 +105,17 @@ export default function SubmitPage() {
             </div>
           </div>
         ) : (
-          <ProjectSubmitForm 
-            userAddress={address}
-            userName={userName || undefined}
-            userFid={userFid}
-            onSuccess={() => {
-              // Optionally redirect the user after successful submission
-              // router.push('/');
-            }}
-          />
+          <>
+            <ProjectSubmitForm 
+              userAddress={address}
+              userName={userName || undefined}
+              userFid={userFid}
+              onSuccess={() => {
+                // Optionally redirect the user after successful submission
+                // router.push('/');
+              }}
+            />
+          </>
         )}
       </main>
     </div>
