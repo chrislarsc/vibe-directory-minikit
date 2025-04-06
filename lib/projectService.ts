@@ -20,7 +20,7 @@ export async function initializeProjectsStore(): Promise<void> {
     if (!existingProjects) {
       console.log(`No existing projects found. Initializing Redis with ${initialProjects.length} projects`);
       
-      // Store the data directly as an object
+      // Store the data
       const success = await redis.set(PROJECTS_KEY, initialProjects);
       if (success === 'OK') {
         console.log('Projects initialized in Redis successfully');
@@ -72,6 +72,7 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
       try {
         // Try to parse the JSON string
         projects = JSON.parse(projectsData) as Project[];
+        console.log('Successfully parsed projects from Redis string');
       } catch (parseError) {
         console.error('Error parsing projects from Redis:', parseError);
         // If we can't parse the JSON, reinitialize and return defaults
@@ -83,10 +84,20 @@ export async function getAllProjects(showAll: boolean = false): Promise<Project[
     } else if (typeof projectsData === 'object' && Array.isArray(projectsData)) {
       // If Redis returned the data already as an array
       projects = projectsData;
+      console.log('Retrieved projects as array from Redis');
     } else {
       console.error('Unexpected Redis data format:', typeof projectsData);
       await initializeProjectsStore();
       return showAll 
+        ? [...initialProjects]
+        : [...initialProjects].filter(p => p.displayed !== false);
+    }
+    
+    // Check if any projects exist in the array
+    if (!projects || projects.length === 0) {
+      console.log('No valid projects array found in Redis, reinitializing...');
+      await initializeProjectsStore();
+      return showAll
         ? [...initialProjects]
         : [...initialProjects].filter(p => p.displayed !== false);
     }
@@ -129,12 +140,15 @@ export async function addProject(projectData: Omit<Project, 'id'>): Promise<Proj
 
   try {
     // Get current projects
-    const projects = await getAllProjects();
+    const projects = await getAllProjects(true); // Get all projects, including non-displayed ones
     
     // Add new project at the beginning of the array
     const updatedProjects = [newProject, ...projects];
     
-    // Save back to Redis as objects directly
+    // Log the operation for debugging
+    console.log(`Adding new project "${newProject.title}" to Redis. Total projects: ${updatedProjects.length}`);
+    
+    // Save back to Redis with explicit JSON.stringify to ensure proper serialization
     const success = await redis.set(PROJECTS_KEY, updatedProjects);
     
     if (success !== 'OK') {
@@ -161,7 +175,7 @@ export async function updateProject(id: string, projectData: Partial<Project>, a
   }
 
   try {
-    const projects = await getAllProjects();
+    const projects = await getAllProjects(true); // Get all projects, including non-displayed ones
     const index = projects.findIndex(project => project.id === id);
     
     if (index === -1) {
@@ -175,7 +189,8 @@ export async function updateProject(id: string, projectData: Partial<Project>, a
     
     projects[index] = updatedProject;
     
-    // Save back to Redis as objects directly
+    // Save back to Redis
+    console.log(`Updating project "${updatedProject.title}" in Redis`);
     const success = await redis.set(PROJECTS_KEY, projects);
     
     if (success !== 'OK') {
@@ -201,14 +216,16 @@ export async function deleteProject(id: string, adminAddress?: string): Promise<
   }
 
   try {
-    const projects = await getAllProjects();
+    const projects = await getAllProjects(true); // Get all projects, including non-displayed ones
+    const projectToDelete = projects.find(project => project.id === id);
     const filteredProjects = projects.filter(project => project.id !== id);
     
     if (filteredProjects.length === projects.length) {
       return false; // No project was deleted
     }
     
-    // Save back to Redis as objects directly
+    // Save back to Redis
+    console.log(`Deleting project "${projectToDelete?.title || id}" from Redis`);
     const success = await redis.set(PROJECTS_KEY, filteredProjects);
     
     if (success !== 'OK') {
